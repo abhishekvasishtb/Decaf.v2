@@ -98,7 +98,6 @@ static uint32_t cur_opcode;
 //#define MACRO_TEST   1
 
 /* global register indexes */
-/* AWH static */ TCGv_ptr cpu_env;
 static TCGv_ptr cpu_env;
 static TCGv cpu_A0;
 static TCGv cpu_cc_dst, cpu_cc_src, cpu_cc_src2, cpu_cc_srcT;
@@ -112,6 +111,7 @@ static TCGv eip_taint;
 // AWH - Now in shared/DECAF_tcg_taint.c static TCGv tempidx, tempidx2;
 #endif /* CONFIG_TCG_TAINT */
 
+
 /* local temps */
 static TCGv cpu_T[2];
 /* local register indexes (only used inside old micro ops) */
@@ -120,17 +120,16 @@ static TCGv_ptr cpu_ptr0, cpu_ptr1;
 static TCGv_i32 cpu_tmp2_i32, cpu_tmp3_i32;
 static TCGv_i64 cpu_tmp1_i64;
 
+//static uint8_t gen_opc_cc_op[OPC_BUF_SIZE];
+
 #ifdef CONFIG_TCG_TAINT
 //static TCGv cpu_tmp6;
 /* This needs to be accessable to the taint generation function so that
    this metadata can be updated as more taint IRs are added to the TB. */
 uint8_t gen_opc_cc_op[OPC_BUF_SIZE];
 #else
-
 static uint8_t gen_opc_cc_op[OPC_BUF_SIZE];
-
 #endif /* CONFIG_TCG_TAINT */
-
 
 #include "exec/gen-icount.h"
 
@@ -241,9 +240,16 @@ enum {
 //DECAF: insert a callback function void (*func)(void);
 static inline void tcg_gen_call_cb_0(void *func)
 {
-	int sizemask;
-	sizemask = dh_is_64bit(void);
-	tcg_gen_helperN(func, 0, sizemask, dh_retvar(void), 0, NULL);
+	//int sizemask;
+	//sizemask = dh_is_64bit(void);
+	//AVB No more helper method
+	//Attempt to do it here
+	//tcg_gen_helperN(func, 0, sizemask, dh_retvar(void), 0, NULL);
+	
+    
+    tcg_gen_callN(&tcg_ctx, func, dh_retvar(void),
+                  0, NULL);
+	
 }
 //DECAF: END
 
