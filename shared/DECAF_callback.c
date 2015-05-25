@@ -738,10 +738,11 @@ void DECAF_invoke_tlb_exec_callback(CPUState *env, gva_t vaddr)
 
 void helper_DECAF_invoke_opcode_range_callback(
 		CPUState *env,
-		target_ulong eip,
+		target_ulong* eip__,
 		target_ulong next_eip,
 		uint32_t op)
 {
+	target_ulong eip= *eip__;
 	callback_struct_t *cb_struct = instructionCallbacks[op];
 	if(cb_struct == NULL || env == NULL)
 		return;

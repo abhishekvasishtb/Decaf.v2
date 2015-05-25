@@ -112,7 +112,7 @@ typedef struct _DECAF_Opcode_Range_Params
 	CPUState *env;
 	gva_t eip;
 	gva_t next_eip;
-	uint16_t op;
+	int32_t op;
 } DECAF_Opcode_Range_Params;
 
 typedef struct _DECAF_Block_End_Params

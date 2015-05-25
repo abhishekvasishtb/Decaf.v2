@@ -2756,7 +2756,7 @@ static inline int gen_taintcheck_insn(int search_pc)
         break; /* No taint info propagated (register liveness gets these) */
       case INDEX_op_DECAF_checkeip:
     	  if (DECAF_is_callback_needed(DECAF_EIP_CHECK_CB)){
-				arg0 = gen_opparam_ptr[-1];//target eip
+				arg0 = *gen_opparam_ptr[-1];//target eip
 				arg1 = gen_opparam_ptr[-2];//source eip
 				TCGv shadow = shadow_arg[arg0];
 				if (shadow != 0) {

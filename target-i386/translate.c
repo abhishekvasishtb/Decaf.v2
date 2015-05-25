@@ -91,7 +91,8 @@ static target_ulong next_pc;
 // source was.
 static target_ulong cur_pc;
 
-static uint32_t cur_opcode;
+// AVB changed data type
+static int32_t cur_opcode;
 
 
 
@@ -490,7 +491,7 @@ static inline void gen_op_add_reg_T0(TCGMemOp size, int reg)
 
 	//For DECAF_EIP_CHECK_CB -by Hu
 #ifdef CONFIG_TCG_TAINT
-	TCGv t1 = tcg_const_ptr(cur_pc);
+	TCGv_ptr t1 = tcg_const_ptr(cur_pc);
     tcg_gen_DECAF_checkeip(t1, cpu_T[0]);
 #endif
 }
@@ -2295,7 +2296,8 @@ static inline void gen_goto_tb(DisasContext *s, int tb_num, target_ulong eip)
 {
     TranslationBlock *tb;
     target_ulong pc;
-
+	
+	
     pc = s->cs_base + eip;
     tb = s->tb;
     /* NOTE: we handle the case where the TB spans two pages here */
@@ -2309,18 +2311,22 @@ static inline void gen_goto_tb(DisasContext *s, int tb_num, target_ulong eip)
 		//Heng: now we change the opcode-specific callback to instruction end.
 		if(DECAF_is_callback_needed(DECAF_OPCODE_RANGE_CB) &&
 				DECAF_is_callback_needed_for_opcode(cur_opcode)) {
-			TCGv t_cur_pc, t_next_pc, t_opcode;
-
+			//TCGv t_cur_pc, t_next_pc, t_opcode;
+			TCGv t_opcode,t_next_pc;
+			TCGv_ptr t_cur_pc;
 			t_cur_pc = tcg_const_ptr(cur_pc);
-			t_next_pc = tcg_temp_new_ptr();
-			tcg_gen_ld_tl(t_next_pc, cpu_env, offsetof(CPUState, eip));
-			t_opcode = tcg_const_i32(cur_opcode);
+			t_next_pc = tcg_temp_new();
+			//AVB CHANGED, check for problems
+			tcg_gen_ld_tl(t_next_pc, cpu_env, offsetof(CPUX86State, eip));
+			t_opcode = tcg_const_tl(cur_opcode);
+			
 			gen_helper_DECAF_invoke_opcode_range_callback(cpu_env, t_cur_pc, t_next_pc, t_opcode);
 
-			tcg_temp_free(t_cur_pc);
+			tcg_temp_free_ptr(t_cur_pc);
 			tcg_temp_free(t_next_pc);
-			tcg_temp_free_i32(t_opcode);
+			tcg_temp_free(t_opcode);
 		}
+		
 
 
     	//By the time this function is called, the env->eip has already been updated to the
@@ -2332,7 +2338,7 @@ static inline void gen_goto_tb(DisasContext *s, int tb_num, target_ulong eip)
           TCGv_ptr tmpTb = tcg_const_ptr((tcg_target_ulong)tb);
           //LOK: We use tcg_temp_new since that defines a new target_ulong
           // which can be confirmed inside tcg-op.h:2141
-    	  TCGv tmpFrom = tcg_temp_new();
+    	  TCGv tmpFrom = tcg_temp_local_new();
     	  tcg_gen_movi_tl(tmpFrom, cur_pc);
           gen_helper_DECAF_invoke_block_end_callback(cpu_env, tmpTb, tmpFrom);
 
@@ -2700,17 +2706,17 @@ static void gen_eob(DisasContext *s)
 		//Heng: now we change the opcode-specific callback to instruction end.
 		if(DECAF_is_callback_needed(DECAF_OPCODE_RANGE_CB) &&
 				DECAF_is_callback_needed_for_opcode(cur_opcode)) {
-			TCGv t_cur_pc, t_next_pc, t_opcode;
-
+			TCGv t_next_pc, t_opcode;
+			TCGv_ptr t_cur_pc;
 			t_cur_pc = tcg_const_ptr(cur_pc);
-			t_next_pc = tcg_temp_new_ptr();
-			tcg_gen_ld_tl(t_next_pc, cpu_env, offsetof(CPUState, eip));
-			t_opcode = tcg_const_i32(cur_opcode);
+			t_next_pc = tcg_temp_new();
+			tcg_gen_ld_tl(t_next_pc, cpu_env, offsetof(CPUX86State, eip));
+			t_opcode = tcg_const_tl(cur_opcode);
 			gen_helper_DECAF_invoke_opcode_range_callback(cpu_env, t_cur_pc, t_next_pc, t_opcode);
 
-			tcg_temp_free(t_cur_pc);
+			tcg_temp_free_ptr(t_cur_pc);
 			tcg_temp_free(t_next_pc);
-			tcg_temp_free_i32(t_opcode);
+			tcg_temp_free(t_opcode);
 		}
 
 
@@ -2727,7 +2733,7 @@ static void gen_eob(DisasContext *s)
           TCGv_ptr tmpTb = tcg_const_ptr((tcg_target_ulong)s->tb);
           //LOK: We use tcg_temp_new since that defines a new target_ulong
           // which can be confirmed inside tcg-op.h:2141
-    	  TCGv tmpFrom = tcg_temp_new();
+    	  TCGv tmpFrom = tcg_temp_local_new();
 
     	  tcg_gen_movi_tl(tmpFrom, cur_pc);
           gen_helper_DECAF_invoke_block_end_callback(cpu_env, tmpTb, tmpFrom);
@@ -5378,7 +5384,7 @@ static target_ulong disas_insn(CPUX86State *env, DisasContext *s,
                 gen_op_mov_reg_v(ot, R_EAX, t0);
                 //tcg_gen_br(label2);
                 gen_set_label(label1);
-                gen_op_st_v(ot + s->mem_index, t1, a0);
+                gen_op_st_v(s,ot + s->mem_index, t1, a0);
 				//gen_op_st_v(s, ot, t1, a0);
             }
             //gen_set_label(label2);
@@ -7110,17 +7116,18 @@ static target_ulong disas_insn(CPUX86State *env, DisasContext *s,
          */
         if(DECAF_is_callback_needed(DECAF_OPCODE_RANGE_CB) &&
                 DECAF_is_callback_needed_for_opcode(b)) {
-            TCGv t_cur_pc, t_next_pc, t_opcode;
-
+            TCGv t_next_pc , t_opcode;
+			TCGv_ptr t_cur_pc;
             t_cur_pc = tcg_const_ptr(cur_pc);
-            t_next_pc = tcg_temp_new_ptr();
-            tcg_gen_ld_tl(t_next_pc, cpu_env, offsetof(CPUState, eip));
-            t_opcode = tcg_const_i32(b);
+            t_next_pc = tcg_temp_new();
+            tcg_gen_ld_tl(t_next_pc, cpu_env, offsetof(CPUX86State, eip));
+		
+            t_opcode = tcg_const_tl(b);
             gen_helper_DECAF_invoke_opcode_range_callback(cpu_env, t_cur_pc, t_next_pc, t_opcode);
 
-            tcg_temp_free(t_cur_pc);
+            tcg_temp_free_ptr(t_cur_pc);
             tcg_temp_free(t_next_pc);
-            tcg_temp_free_i32(t_opcode);
+            tcg_temp_free(t_opcode);
         }
 
 		gen_interrupt(s, EXCP03_INT3, pc_start - s->cs_base, s->pc - s->cs_base);
@@ -7137,17 +7144,18 @@ static target_ulong disas_insn(CPUX86State *env, DisasContext *s,
              */
             if(DECAF_is_callback_needed(DECAF_OPCODE_RANGE_CB) &&
                     DECAF_is_callback_needed_for_opcode(b)) {
-                TCGv t_cur_pc, t_next_pc, t_opcode;
+                TCGv t_next_pc, t_opcode;
+				TCGv_ptr t_cur_pc;
+	            t_cur_pc = tcg_const_ptr(cur_pc);
+	            t_next_pc = tcg_temp_new();
+	            tcg_gen_ld_tl(t_next_pc, cpu_env, offsetof(CPUX86State, eip));
+			
+	            t_opcode = tcg_const_tl(b);
+	            gen_helper_DECAF_invoke_opcode_range_callback(cpu_env, t_cur_pc, t_next_pc, t_opcode);
 
-                t_cur_pc = tcg_const_ptr(cur_pc);
-                t_next_pc = tcg_temp_new_ptr();
-                tcg_gen_ld_tl(t_next_pc, cpu_env, offsetof(CPUState, eip));
-                t_opcode = tcg_const_i32(b);
-                gen_helper_DECAF_invoke_opcode_range_callback(cpu_env, t_cur_pc, t_next_pc, t_opcode);
-
-                tcg_temp_free(t_cur_pc);
-                tcg_temp_free(t_next_pc);
-                tcg_temp_free_i32(t_opcode);
+	            tcg_temp_free_ptr(t_cur_pc);
+	            tcg_temp_free(t_next_pc);
+	            tcg_temp_free(t_opcode);
             }
 
             gen_interrupt(s, val, pc_start - s->cs_base, s->pc - s->cs_base);
@@ -7158,7 +7166,7 @@ static target_ulong disas_insn(CPUX86State *env, DisasContext *s,
             goto illegal_op;
         gen_update_cc_op(s);
         gen_jmp_im(pc_start - s->cs_base);
-        gen_helper_into(cpu_env, tcg_const_i32(s->pc - pc_start));
+        gen_helper_into(cpu_env, tcg_const_tl(s->pc - pc_start));
         break;
 #ifdef WANT_ICEBP
     case 0xf1: /* icebp (undocumented, exits to external debugger) */
@@ -8095,17 +8103,17 @@ static target_ulong disas_insn(CPUX86State *env, DisasContext *s,
 		//Heng: now we change the opcode-specific callback to instruction end.
 		if(DECAF_is_callback_needed(DECAF_OPCODE_RANGE_CB) &&
 				DECAF_is_callback_needed_for_opcode(b)) {
-			TCGv t_cur_pc, t_next_pc, t_opcode;
-
+			TCGv  t_next_pc, t_opcode;
+			TCGv_ptr t_cur_pc;
 			t_cur_pc = tcg_const_ptr(cur_pc);
-			t_next_pc = tcg_temp_new_ptr();
-			tcg_gen_ld_tl(t_next_pc, cpu_env, offsetof(CPUState, eip));
-			t_opcode = tcg_const_i32(b);
+			t_next_pc = tcg_temp_new();
+			tcg_gen_ld_tl(t_next_pc, cpu_env, offsetof(CPUX86State, eip));
+			t_opcode = tcg_const_tl(b);
 			gen_helper_DECAF_invoke_opcode_range_callback(cpu_env, t_cur_pc, t_next_pc, t_opcode);
 
-			tcg_temp_free(t_cur_pc);
+			tcg_temp_free_ptr(t_cur_pc);
 			tcg_temp_free(t_next_pc);
-			tcg_temp_free_i32(t_opcode);
+			tcg_temp_free(t_opcode);
 		}
     }
 	
