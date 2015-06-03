@@ -114,7 +114,13 @@ int main(int argc, char **argv)
 #include "sysemu/arch_init.h"
 #include "qemu/osdep.h"
 
+#ifdef CONFIG_TCG_TAINT
+void garbage_collect_taint(int flag); // shared/taint_memory.c
+#endif /* CONFIG_TCG_TAINT */
+
+
 #include "ui/qemu-spice.h"
+#include "shared/DECAF_main_internal.h" // AWH
 #include "qapi/string-input-visitor.h"
 #include "qapi/opts-visitor.h"
 #include "qom/object_interfaces.h"
@@ -1796,6 +1802,12 @@ static void main_loop(void)
         ti = profile_getclock();
 #endif
         last_io = main_loop_wait(nonblocking);
+
+#ifdef CONFIG_TCG_TAINT
+        garbage_collect_taint(0);
+#endif /* CONFIG_TCG_TAINT */
+
+
 #ifdef CONFIG_PROFILER
         dev_time += profile_getclock() - ti;
 #endif
@@ -2727,6 +2739,13 @@ static void set_memory_options(uint64_t *ram_slots, ram_addr_t *maxram_size)
     }
 }
 
+
+//extern void DECAF_cleanup_insn_cbs(void);
+extern void do_load_plugin_internal(Monitor* mon, const char* plugin_path);
+extern int DECAF_kvm_enabled;
+//end - Aravind
+
+
 int main(int argc, char **argv, char **envp)
 {
     int i;
@@ -2735,6 +2754,14 @@ int main(int argc, char **argv, char **envp)
     const char *kernel_filename, *kernel_cmdline;
     const char *boot_order = NULL;
     const char *boot_once = NULL;
+
+    const char *after_loadvm = NULL; // AWH
+    const char *load_plugin = NULL; // AWH
+#ifdef CONFIG_VMI_ENABLE
+    FILE *vmi_profile_fp = NULL;
+#endif
+
+
     DisplayState *ds;
     int cyls, heads, secs, translation;
     QemuOpts *hda_opts = NULL, *opts, *machine_opts, *icount_opts = NULL;
@@ -3366,6 +3393,19 @@ int main(int argc, char **argv, char **envp)
             case QEMU_OPTION_loadvm:
                 loadvm = optarg;
                 break;
+
+// AWH
+            case QEMU_OPTION_after_loadvm:      // TEMU option
+                after_loadvm = optarg;
+                break;
+            case QEMU_OPTION_load_plugin:       // DECAF option
+                load_plugin = optarg;
+                break;
+            case QEMU_OPTION_toggle_kvm:
+                DECAF_kvm_enabled = optarg;
+                break;
+
+// AVB end
             case QEMU_OPTION_full_screen:
                 full_screen = 1;
                 break;
@@ -4325,6 +4365,16 @@ int main(int argc, char **argv, char **envp)
     rom_load_done();
 
     qemu_system_reset(VMRESET_SILENT);
+
+
+#if 1 // AWH - Port of TEMU functionality
+    DECAF_init();                // some initializations have to be done
+    // before loadvm 
+    // AWH - FIXME: Change to new do_load_plugin() interface
+    if (loadvm == NULL && load_plugin)
+        do_load_plugin_internal(cur_mon, load_plugin);
+#endif // AWH
+    
     if (loadvm) {
         if (load_vmstate(loadvm) < 0) {
             autostart = 0;

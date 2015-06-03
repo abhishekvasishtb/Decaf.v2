@@ -31,6 +31,13 @@
 #include "qemu/error-report.h"
 #include <hw/ide/pci.h>
 
+
+#ifdef CONFIG_TCG_TAINT
+    extern int taintcheck_chk_hdread(const ram_addr_t paddr,const unsigned long vaddr, const int size, const int64_t sect_num, const void *s);
+    extern int taintcheck_chk_hdwrite(const ram_addr_t paddr, const unsigned long vaddr, const int size, const int64_t sect_num, const void *s);
+#endif
+
+
 #define BMDMA_PAGE_SIZE 4096
 
 #define BM_MIGRATION_COMPAT_STATUS_BITS \
@@ -148,9 +155,25 @@ static int bmdma_rw_buf(IDEDMA *dma, int is_write)
             if (is_write) {
                 pci_dma_write(pci_dev, bm->cur_prd_addr,
                               s->io_buffer + s->io_buffer_index, l);
+                
+                #ifdef CONFIG_TCG_TAINT
+                    //fprintf(stderr, "pci_dma_write()\n");
+                    if(ide_get_sector(s) >= 0)
+                        taintcheck_chk_hdread(bm->cur_prd_addr, bm->cur_addr, l, ide_get_sector(s), s->bs);
+                #endif /* CONFIG_TCG_TAINT */
+            
+
             } else {
                 pci_dma_read(pci_dev, bm->cur_prd_addr,
                              s->io_buffer + s->io_buffer_index, l);
+
+                #ifdef CONFIG_TCG_TAINT
+                    //fprintf(stderr, "pci_dma_read()\n");
+                    if(ide_get_sector(s) >= 0)
+                        taintcheck_chk_hdwrite(bm->cur_prd_addr, bm->cur_addr, l, ide_get_sector(s), s->bs);
+                #endif /* CONFIG_TCG_TAINT */
+
+                    
             }
             bm->cur_prd_addr += l;
             bm->cur_prd_len -= l;

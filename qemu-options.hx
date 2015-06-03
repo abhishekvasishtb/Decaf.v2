@@ -3028,6 +3028,40 @@ STEXI
 Start right away with a saved state (@code{loadvm} in monitor)
 ETEXI
 
+
+
+DEF("toggle-kvm", HAS_ARG, QEMU_OPTION_toggle_kvm, \
+    "-toggle-kvm [0|1]\n" \
+    "                toggle KVM on or off at runtime\n", \
+    QEMU_ARCH_ALL)
+STEXI
+@item -toggle-kvm @var{file}
+@findex -toggle-kvm
+Toggle KVM on or off at runtime. 
+ETEXI
+
+DEF("after_loadvm", HAS_ARG, QEMU_OPTION_after_loadvm, \
+    "-after_loadvm [???]\n" \
+    "                NO DESCRIPTION\n", \
+    QEMU_ARCH_ALL)
+STEXI
+@item -after_loadvm @var{file}
+@findex -after_loadvm
+NO DESCRIPTION
+ETEXI
+
+DEF("load-plugin", HAS_ARG, QEMU_OPTION_load_plugin, \
+    "-load-plugin [path to plugin]\n" \
+    "                load the specified plugin at startup\n", \
+    QEMU_ARCH_ALL)
+STEXI
+@item -load-plugin @var{file}
+@findex -load-plugin
+Load the specified plugin immediately upon startup of QEMU. 
+ETEXI
+
+
+
 #ifndef _WIN32
 DEF("daemonize", 0, QEMU_OPTION_daemonize, \
     "-daemonize      daemonize QEMU after initializing\n", QEMU_ARCH_ALL)

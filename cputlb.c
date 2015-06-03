@@ -30,6 +30,13 @@
 #include "exec/ram_addr.h"
 #include "tcg/tcg.h"
 
+
+#include "shared/DECAF_main.h"
+#include "shared/DECAF_callback_to_QEMU.h"
+
+
+
+
 //#define DEBUG_TLB
 //#define DEBUG_TLB_CHECK
 
@@ -311,6 +318,13 @@ void tlb_set_page(CPUState *cpu, target_ulong vaddr,
 
     if (prot & PAGE_EXEC) {
         te->addr_code = code_address;
+
+#ifdef CONFIG_VMI_ENABLE
+        if (DECAF_is_callback_needed(DECAF_TLB_EXEC_CB))
+            DECAF_invoke_tlb_exec_callback(env, vaddr);
+#endif /* CONFIG_VMI_ENABLE */
+
+
     } else {
         te->addr_code = -1;
     }

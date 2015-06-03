@@ -46,6 +46,11 @@
 #include "sysemu/xen-mapcache.h"
 #include "trace.h"
 #endif
+
+#include "shared/DECAF_main.h"
+#include "shared/DECAF_callback_to_QEMU.h"
+
+
 #include "exec/cpu-all.h"
 #include "qemu/rcu_queue.h"
 #include "exec/cputlb.h"
@@ -2405,6 +2410,101 @@ bool address_space_write(AddressSpace *as, hwaddr addr,
 bool address_space_read(AddressSpace *as, hwaddr addr, uint8_t *buf, int len)
 {
     return address_space_rw(as, addr, buf, len, false);
+}
+
+
+//AVB, this may lead to problems, as the implementation mechanism has changed in QEMU 2.0.3
+// AWH - copies from temu/exec.c
+void DECAF_physical_memory_rw(CPUState* env, gpa_t addr, uint8_t *buf,
+                            int len, int is_write)
+{
+    int l, io_index;
+    uint8_t *ptr;
+    uint32_t val;
+    target_phys_addr_t page;
+    unsigned long pd;
+    PhysPageDesc *p;
+
+    while (len > 0) {
+        page = addr & TARGET_PAGE_MASK;
+        l = (page + TARGET_PAGE_SIZE) - addr;
+        if (l > len)
+            l = len;
+        p = phys_page_find(page >> TARGET_PAGE_BITS);
+        if (!p) {
+            pd = IO_MEM_UNASSIGNED;
+        } else {
+            pd = p->phys_offset;
+        }
+
+        if (is_write) {
+            if ((pd & ~TARGET_PAGE_MASK) != IO_MEM_RAM) {
+                io_index = (pd >> IO_MEM_SHIFT) & (IO_MEM_NB_ENTRIES - 1);
+                /* XXX: could force cpu_single_env to NULL to avoid
+                   potential bugs */
+                                //FIXME: may need to check notdirty_mem_write case here --Heng Yin
+                if (l >= 4 && ((addr & 3) == 0)) {
+                    /* 32 bit write access */
+                    memcpy(&val, buf, 4);
+                    io_mem_write[io_index][2](io_mem_opaque[io_index], addr, val);
+                    l = 4;
+                } else if (l >= 2 && ((addr & 1) == 0)) {
+                    /* 16 bit write access */
+                    memcpy(&val, buf, 2);
+                    io_mem_write[io_index][1](io_mem_opaque[io_index], addr, val);
+                    l = 2;
+                } else {
+                    /* 8 bit write access */
+                    val = *(uint8_t*)(buf);
+                    io_mem_write[io_index][0](io_mem_opaque[io_index], addr, val);
+                    l = 1;
+                }
+            } else {
+                unsigned long addr1;
+                addr1 = (pd & TARGET_PAGE_MASK) + (addr & ~TARGET_PAGE_MASK);
+                /* RAM case */
+                ptr = /* AWH phys_ram_base*/qemu_safe_ram_ptr(0) + addr1;
+                memcpy(ptr, buf, l);
+                if (!cpu_physical_memory_is_dirty(addr1)) {
+                    /* invalidate code */
+                    tb_invalidate_phys_page_range(addr1, addr1 + l, 0);
+                    /* set dirty bit */
+                    /* AWH phys_ram_dirty*/ram_list.phys_dirty[addr1 >> TARGET_PAGE_BITS] |=
+                        (0xff & ~CODE_DIRTY_FLAG);
+                }
+            }
+        } else {
+            if ((pd & ~TARGET_PAGE_MASK) > IO_MEM_ROM &&
+                !(pd & IO_MEM_ROMD)) {
+                /* I/O case */
+                io_index = (pd >> IO_MEM_SHIFT) & (IO_MEM_NB_ENTRIES - 1);
+                if (l >= 4 && ((addr & 3) == 0)) {
+                    /* 32 bit read access */
+                    val = io_mem_read[io_index][2](io_mem_opaque[io_index], addr);
+                    memcpy(buf, &val, 4);
+                    l = 4;
+                } else if (l >= 2 && ((addr & 1) == 0)) {
+                    /* 16 bit read access */
+                    val = io_mem_read[io_index][1](io_mem_opaque[io_index], addr);
+                    memcpy(buf, &val, 2);
+                    l = 2;
+                } else {
+                    /* 8 bit read access */
+                    val = io_mem_read[io_index][0](io_mem_opaque[io_index], addr);
+                    *(uint8_t *)buf = (uint8_t)val;
+                    l = 1;
+                }
+            } else {
+                /* RAM case */
+                ptr = /* AWH phys_ram_base*/ qemu_safe_ram_ptr(0) + (pd & TARGET_PAGE_MASK) +
+                    (addr & ~TARGET_PAGE_MASK);
+                memcpy(buf, ptr, l);
+            }
+        }
+        len -= l;
+        buf += l;
+        addr += l;
+    }
 }
 
 

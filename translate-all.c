@@ -35,7 +35,16 @@
 #include "cpu.h"
 #include "trace.h"
 #include "disas/disas.h"
+
+#ifdef CONFIG_TCG_TAINT
+#include "tcg-op.h"
+#include "shared/tainting/taint_memory.h"
+#include "shared/tainting/tcg_taint.h"
+#else
 #include "tcg.h"
+#endif /* CONFIG_TCG_TAINT */
+
+
 #if defined(CONFIG_USER_ONLY)
 #include "qemu.h"
 #if defined(__FreeBSD__) || defined(__FreeBSD_kernel__)
@@ -72,6 +81,24 @@
 #endif
 
 #define SMC_BITMAP_USE_THRESHOLD 10
+
+
+ #ifdef CONFIG_TCG_IR_LOG
+/* AWH - Additional debug insns, callbacks, etc. get added into TBs,
+  increasing their size beyond the bare minimum.  So, add some padding
+  to avoid overflows. */
+#define TCG_IR_LOG_PADDING 48
+static uint16_t *gDECAF_gen_opc_buf;
+#if TCG_TARGET_REG_BITS == 32
+uint32_t *gDECAF_gen_opparam_buf;
+#else
+uint64_t *gDECAF_gen_opparam_buf;
+#endif /* TCG_TARGET_REG_BITS */
+#endif /* CONFIG_TCG_IR_LOG */
+/* AWH static */ TranslationBlock *tbs;
+/* AWH static int */ uint32_t code_gen_max_blocks;
+
+
 
 typedef struct PageDesc {
     /* list of TBs intersecting this ram page */
@@ -157,6 +184,14 @@ int cpu_gen_code(CPUArchState *env, TranslationBlock *tb, int *gen_code_size_ptr
 #endif
     tcg_func_start(s);
 
+#ifdef CONFIG_TCG_TAINT
+    if (taint_tracking_enabled)
+        clean_shadow_arg();
+#endif /* CONFIG_TCG_TAINT */
+#ifdef CONFIG_TCG_IR_LOG
+    tb->DECAF_logged = 0; /* AWH - Generating new code, so this TB isn't on disk */
+#endif /* CONFIG_TCG_IR_LOG */
+
     gen_intermediate_code(env, tb);
 
     trace_translate_block(tb, tb->pc, tb->tc_ptr);
@@ -215,6 +250,15 @@ static int cpu_restore_state_from_tb(CPUState *cpu, TranslationBlock *tb,
     ti = profile_getclock();
 #endif
     tcg_func_start(s);
+
+#ifdef CONFIG_TCG_TAINT
+    if (taint_tracking_enabled)
+        clean_shadow_arg();
+#endif /* CONFIG_TCG_TAINT */
+#ifdef CONFIG_TCG_IR_LOG
+    tb->DECAF_logged = 0; /* AWH - Generating new code, so this TB isn't on disk */
+#endif /* CONFIG_TCG_IR_LOG */
+
 
     gen_intermediate_code_pc(env, tb);
 
@@ -660,6 +704,11 @@ static inline void *alloc_code_gen_buffer(void)
 
 static inline void code_gen_alloc(size_t tb_size)
 {
+
+    #ifdef CONFIG_TCG_IR_LOG
+    unsigned long i;
+    #endif /* CONFIG_TCG_IR_LOG */
+    
     tcg_ctx.code_gen_buffer_size = size_code_gen_buffer(tb_size);
     tcg_ctx.code_gen_buffer = alloc_code_gen_buffer();
     if (tcg_ctx.code_gen_buffer == NULL) {
@@ -681,10 +730,41 @@ static inline void code_gen_alloc(size_t tb_size)
 
     tcg_ctx.code_gen_buffer_max_size = tcg_ctx.code_gen_buffer_size -
         (TCG_MAX_OP_SIZE * OPC_BUF_SIZE);
+
+
+#if defined(CONFIG_TCG_IR_LOG)
+/* AWH - IR storage requires too much RAM for the default code_gen_max_blocks.  
+   So, we make the number of code blocks much smaller. */
+    tcg_ctx.code_gen_max_blocks = tcg_ctx.code_gen_buffer_size / CODE_GEN_AVG_BLOCK_SIZE / 16;
+#else
+//Default case, AVB
     tcg_ctx.code_gen_max_blocks = tcg_ctx.code_gen_buffer_size /
             CODE_GEN_AVG_BLOCK_SIZE;
+#endif /* CONFIG_TCG_IR_LOG */
+
+
     tcg_ctx.tb_ctx.tbs =
             g_malloc(tcg_ctx.code_gen_max_blocks * sizeof(TranslationBlock));
+
+
+#ifdef CONFIG_TCG_IR_LOG
+    fprintf(stderr, "AWH: code_gen_alloc(): code_gen_max_blocks: %d\n", code_gen_max_blocks);
+    fprintf(stderr, "AWH: code_gen_alloc(): gDECAF_gen_opc_buf: %dk\n", ((OPC_MAX_SIZE+ TCG_IR_LOG_PADDING) * sizeof(uint16_t) * code_gen_max_blocks) >> 10);
+    gDECAF_gen_opc_buf = g_malloc((OPC_MAX_SIZE + TCG_IR_LOG_PADDING) * sizeof(uint16_t) * code_gen_max_blocks);
+    fprintf(stderr, "AWH: code_gen_alloc(): gDECAF_gen_opparam_buf: %dk\n", ((OPC_MAX_SIZE + TCG_IR_LOG_PADDING) * sizeof(TCGArg) * 6 * code_gen_max_blocks) >> 10);
+    gDECAF_gen_opparam_buf = g_malloc((OPC_MAX_SIZE + TCG_IR_LOG_PADDING) * sizeof(TCGArg) * 6 * code_gen_max_blocks);
+
+    for (i = 0; i < code_gen_max_blocks; i++) {
+      tcg_ctx.tb_ctx.tbs[i].DECAF_tb_id = i;
+      tcg_ctx.tb_ctx.tbs[i].DECAF_gen_opc_buf = 
+        gDECAF_gen_opc_buf + ((OPC_MAX_SIZE + TCG_IR_LOG_PADDING) * i);
+      /* Allocate 6 arguments per IR opcode */
+      tcg_ctx.tb_ctx.tbs[i].DECAF_gen_opparam_buf = 
+        gDECAF_gen_opparam_buf + ((OPC_MAX_SIZE + TCG_IR_LOG_PADDING) * 6 * i);
+      //printf("Allocating block %d of %d\n", i+1, code_gen_max_blocks);
+    }
+#endif /* CONFIG_TCG_IR_LOG */
+
 }
 
 /* Must be called before using the QEMU cpus. 'tb_size' is the size
@@ -723,6 +803,14 @@ static TranslationBlock *tb_alloc(target_ulong pc)
     tb = &tcg_ctx.tb_ctx.tbs[tcg_ctx.tb_ctx.nb_tbs++];
     tb->pc = pc;
     tb->cflags = 0;
+
+#ifdef CONFIG_TCG_IR_LOG
+    tb->DECAF_logged = 0;  /* AWH - Has this been logged to disk? */
+    tb->DECAF_num_opc = 0;
+    tb->DECAF_num_opparam = 0;
+#endif /* CONFIG_TCG_IR_LOG */
+
+
     return tb;
 }
 
@@ -736,6 +824,11 @@ void tb_free(TranslationBlock *tb)
         tcg_ctx.code_gen_ptr = tb->tc_ptr;
         tcg_ctx.tb_ctx.nb_tbs--;
     }
+
+#ifdef CONFIG_TCG_IR_LOG
+        tb->DECAF_logged = 0;
+#endif /* CONFIG_TCG_TAINT */
+        
 }
 
 static inline void invalidate_page_bitmap(PageDesc *p)

@@ -28,6 +28,8 @@
 #include "hw/loader.h"
 #include "sysemu/sysemu.h"
 
+#include "shared/DECAF_main_internal.h"
+
 /* debug NE2000 card */
 //#define DEBUG_NE2000
 
@@ -248,6 +250,10 @@ ssize_t ne2000_receive(NetClientState *nc, const uint8_t *buf, size_t size_)
     p[3] = total_len >> 8;
     index += 4;
 
+
+    DECAF_nic_receive(buf, size, index-NE2000_PMEM_START, s->start-NE2000_PMEM_START, s->stop-NE2000_PMEM_START);
+
+
     /* write packet data */
     while (size > 0) {
         if (index <= s->stop)
@@ -300,6 +306,7 @@ static void ne2000_ioport_write(void *opaque, uint32_t addr, uint32_t val)
                     index -= NE2000_PMEM_SIZE;
                 /* fail safe: check range on the transmitted length  */
                 if (index + s->tcnt <= NE2000_PMEM_END) {
+                    DECAF_nic_send(index-NE2000_PMEM_START, s->tcnt, s->mem+index);
                     qemu_send_packet(qemu_get_queue(s->nic), s->mem + index,
                                      s->tcnt);
                 }
@@ -448,6 +455,7 @@ static inline void ne2000_mem_writeb(NE2000State *s, uint32_t addr,
     if (addr < 32 ||
         (addr >= NE2000_PMEM_START && addr < NE2000_MEM_SIZE)) {
         s->mem[addr] = val;
+        DECAF_nic_out(addr-NE2000_PMEM_START, 1);
     }
 }
 
@@ -458,6 +466,7 @@ static inline void ne2000_mem_writew(NE2000State *s, uint32_t addr,
     if (addr < 32 ||
         (addr >= NE2000_PMEM_START && addr < NE2000_MEM_SIZE)) {
         *(uint16_t *)(s->mem + addr) = cpu_to_le16(val);
+        DECAF_nic_out(addr-NE2000_PMEM_START, 2);
     }
 }
 
@@ -468,6 +477,7 @@ static inline void ne2000_mem_writel(NE2000State *s, uint32_t addr,
     if (addr < 32 ||
         (addr >= NE2000_PMEM_START && addr < NE2000_MEM_SIZE)) {
         stl_le_p(s->mem + addr, val);
+        DECAF_nic_out(addr-NE2000_PMEM_START, 4);
     }
 }
 
@@ -475,6 +485,10 @@ static inline uint32_t ne2000_mem_readb(NE2000State *s, uint32_t addr)
 {
     if (addr < 32 ||
         (addr >= NE2000_PMEM_START && addr < NE2000_MEM_SIZE)) {
+        //TODO:fix this,when pc starts,there is some cases that addr equals to 0
+        //this will cause crash.
+        if(addr>32)
+            DECAF_nic_in(addr-NE2000_PMEM_START, 1);
         return s->mem[addr];
     } else {
         return 0xff;
@@ -486,6 +500,11 @@ static inline uint32_t ne2000_mem_readw(NE2000State *s, uint32_t addr)
     addr &= ~1; /* XXX: check exact behaviour if not even */
     if (addr < 32 ||
         (addr >= NE2000_PMEM_START && addr < NE2000_MEM_SIZE)) {
+
+        //TODO:fix this,when pc starts, there is some cases that addr equas to 0
+        //this will cause crash.
+        if(addr>32)
+            DECAF_nic_in(addr-NE2000_PMEM_START, 2);
         return le16_to_cpu(*(uint16_t *)(s->mem + addr));
     } else {
         return 0xffff;
@@ -497,6 +516,7 @@ static inline uint32_t ne2000_mem_readl(NE2000State *s, uint32_t addr)
     addr &= ~1; /* XXX: check exact behaviour if not even */
     if (addr < 32 ||
         (addr >= NE2000_PMEM_START && addr < NE2000_MEM_SIZE)) {
+        DECAF_nic_in(addr-NE2000_PMEM_START, 4);
         return ldl_le_p(s->mem + addr);
     } else {
         return 0xffffffff;

@@ -129,6 +129,26 @@
 #define DEF_HELPER_5(name, ret, t1, t2, t3, t4, t5) \
     DEF_HELPER_FLAGS_5(name, 0, ret, t1, t2, t3, t4, t5)
 
+#ifdef CONFIG_TCG_TAINT
+#define DEF_HELPER_5(name, ret, t1, t2, t3, t4, t5) \
+    DEF_HELPER_FLAGS_5(name, 0, ret, t1, t2, t3, t4, t5)
+#define DEF_HELPER_6(name, ret, t1, t2, t3, t4, t5, t6) \
+    DEF_HELPER_FLAGS_6(name, 0, ret, t1, t2, t3, t4, t5, t6)
+#define DEF_HELPER_7(name, ret, t1, t2, t3, t4, t5, t6, t7) \
+    DEF_HELPER_FLAGS_7(name, 0, ret, t1, t2, t3, t4, t5, t6, t7)
+#define DEF_HELPER_8(name, ret, t1, t2, t3, t4, t5, t6, t7, t8) \
+    DEF_HELPER_FLAGS_8(name, 0, ret, t1, t2, t3, t4, t5, t6, t7, t8)
+#define DEF_HELPER_9(name, ret, t1, t2, t3, t4, t5, t6, t7, t8, t9) \
+    DEF_HELPER_FLAGS_9(name, 0, ret, t1, t2, t3, t4, t5, t6, t7, t8, t9)
+#define DEF_HELPER_10(name, ret, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10) \
+    DEF_HELPER_FLAGS_10(name, 0, ret, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10)
+#define DEF_HELPER_11(name, ret, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11) \
+    DEF_HELPER_FLAGS_11(name, 0, ret, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11)
+#define DEF_HELPER_12(name, ret, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12) \
+    DEF_HELPER_FLAGS_12(name, 0, ret, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12)
+#endif /* CONFIG_TCG_TAINT */
+
+
 /* MAX_OPC_PARAM_IARGS must be set to n if last entry is DEF_HELPER_FLAGS_n. */
 
 #endif /* DEF_HELPER_H */

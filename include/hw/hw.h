@@ -14,6 +14,10 @@
 #include "migration/vmstate.h"
 #include "qemu/log.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif // __cplusplus
+
 #ifdef NEED_CPU_H
 #if TARGET_LONG_BITS == 64
 #define qemu_put_betl qemu_put_be64
@@ -65,5 +69,11 @@ void qemu_unregister_reset(QEMUResetHandler *func, void *opaque);
     VMSTATE_UINTTL_ARRAY_V(_f, _s, _n, 0)
 
 #endif
+
+
+#ifdef __cplusplus
+}
+#endif // __cplusplus
+
 
 #endif

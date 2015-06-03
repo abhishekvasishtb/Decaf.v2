@@ -92,11 +92,12 @@ obj-$(CONFIG_TCG_INTERPRETER) += disas/tci.o
 obj-y += fpu/softfloat.o
 obj-y += target-$(TARGET_BASE_ARCH)/
 obj-y += disas.o
-
+obj-y += $(LIBDECAF)
+obj-y += DECAF_target.o
 
 # HELPER_CFLAGS is used for all the code compiled with static register
 # variables
-op_helper.o ldst_helper.o user-exec.o shared/DECAF_callback.o: QEMU_CFLAGS += $(HELPER_CFLAGS)
+decaf_helper.o ldst_helper.o user-exec.o shared/DECAF_callback.o: QEMU_CFLAGS += $(HELPER_CFLAGS)
 
 
 obj-$(call notempty,$(TARGET_XML_FILES)) += gdbstub-xml.o
@@ -162,8 +163,8 @@ obj-y += hw/$(TARGET_BASE_ARCH)/
 endif
 
 #libobj-y += libdecaf.a
-libobj-y += $(LIBDECAF)
-libobj-y += DECAF_target.o
+#libobj-y += $(LIBDECAF)
+#libobj-y += DECAF_target.o
 
 LIBS+=-ldl
 

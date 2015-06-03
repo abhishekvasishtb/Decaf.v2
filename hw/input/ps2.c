@@ -29,6 +29,14 @@
 
 #include "trace.h"
 
+#ifdef CONFIG_TCG_TAINT
+    extern void * cpu_single_env;
+    extern int taint_keystroke_enabled;
+    extern void DECAF_taint_keystroke(int keycode);
+    extern void DECAF_keystroke_read(uint8_t taint_status);
+    extern void DECAF_keystroke_place(int keycode);
+#endif /* CONFIG_TCG_TAINT */
+
 /* debug PC keyboard */
 //#define DEBUG_KBD
 
@@ -80,6 +88,11 @@ typedef struct {
     /* Keep the data array 256 bytes long, which compatibility
      with older qemu versions. */
     uint8_t data[256];
+
+#ifdef CONFIG_TCG_TAINT
+    uint8_t taint_data[PS2_QUEUE_SIZE];
+#endif /* CONFIG_TCG_TAINT */
+
     int rptr, wptr, count;
 } PS2Queue;
 
@@ -145,11 +158,55 @@ void ps2_queue(void *opaque, int b)
     if (q->count >= PS2_QUEUE_SIZE - 1)
         return;
     q->data[q->wptr] = b;
+
+#ifdef CONFIG_TCG_TAINT
+    q->taint_data[q->wptr] = 0;
+#endif /* CONFIG_TCG_TAINT */
+
     if (++q->wptr == PS2_QUEUE_SIZE)
         q->wptr = 0;
     q->count++;
     s->update_irq(s->update_arg, 1);
 }
+
+#ifdef CONFIG_TCG_TAINT
+static void ps2_queue_taint(void *opaque, int b)
+{
+    PS2State *s = (PS2State *)opaque;
+    PS2Queue *q = &s->queue;
+
+    if (q->count >= PS2_QUEUE_SIZE)
+        return;
+    q->data[q->wptr] = b;
+    q->taint_data[q->wptr] = 0xFF;
+    if (++q->wptr == PS2_QUEUE_SIZE)
+        q->wptr = 0;
+    q->count++;
+    s->update_irq(s->update_arg, 1);
+}
+#endif /* CONFIG_TCG_TAINT */
+
+#ifdef CONFIG_TCG_TAINT
+
+static void ps2_put_keycode_taint(void *opaque, int keycode)
+{
+    PS2KbdState *s = opaque;
+
+    /* XXX: add support for scancode set 1 */
+    if (!s->translate && keycode < 0xe0 && s->scancode_set > 1) {
+        if (keycode & 0x80) {
+            ps2_queue_taint(&s->common, 0xf0);
+        }
+        if (s->scancode_set == 2) {
+            keycode = ps2_raw_keycode[keycode & 0x7f];
+        } else if (s->scancode_set == 3) {
+            keycode = ps2_raw_keycode_set3[keycode & 0x7f];
+        }
+      }
+    ps2_queue_taint(&s->common, keycode);
+}
+#endif 
+/* CONFIG_TCG_TAINT */
 
 /*
    keycode is expressed as follow:
@@ -158,6 +215,16 @@ void ps2_queue(void *opaque, int b)
  */
 static void ps2_put_keycode(void *opaque, int keycode)
 {
+#ifdef CONFIG_TCG_TAINT
+    DECAF_keystroke_place(keycode);
+    if(taint_keystroke_enabled)
+    {
+        ps2_put_keycode_taint(opaque,keycode);
+        return;
+    }
+#endif 
+/* CONFIG_TCG_TAINT */
+
     PS2KbdState *s = opaque;
 
     trace_ps2_put_keycode(opaque, keycode);
@@ -207,8 +274,22 @@ uint32_t ps2_read_data(void *opaque)
         if (index < 0)
             index = PS2_QUEUE_SIZE - 1;
         val = q->data[index];
+
+#ifdef CONFIG_TCG_TAINT
+        DECAF_keystroke_read(q->taint_data[index]);
+#endif 
+/* CONFIG_TCG_TAINT */
+
+
     } else {
         val = q->data[q->rptr];
+
+#ifdef CONFIG_TCG_TAINT
+        DECAF_keystroke_read(q->taint_data[q->rptr]);
+#endif 
+/* CONFIG_TCG_TAINT */
+
+
         if (++q->rptr == PS2_QUEUE_SIZE)
             q->rptr = 0;
         q->count--;

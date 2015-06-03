@@ -21,6 +21,11 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+
+#ifndef __TCG_TARGET_H__ /* AWH */
+#define __TCG_TARGET_H__
+
+
 #ifndef TCG_TARGET_I386 
 #define TCG_TARGET_I386 1
 
@@ -146,3 +151,6 @@ static inline void flush_icache_range(uintptr_t start, uintptr_t stop)
 }
 
 #endif
+
+
+#endif /* __TCG_TARGET_H__ */

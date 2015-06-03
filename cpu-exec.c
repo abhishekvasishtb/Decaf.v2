@@ -27,6 +27,7 @@
 #include "exec/address-spaces.h"
 #include "exec/memory-internal.h"
 #include "qemu/rcu.h"
+#include "shared/DECAF_main.h"
 
 /* -icount align implementation. */
 
@@ -482,6 +483,13 @@ int cpu_exec(CPUArchState *env)
                 }
                 spin_lock(&tcg_ctx.tb_ctx.tb_lock);
                 have_tb_lock = true;
+
+                if(g_bNeedFlush)
+                {
+                    tb_flush(env);
+                    g_bNeedFlush = 0;
+                }
+                
                 tb = tb_find_fast(env);
                 /* Note: we do it here to avoid a gcc bug on Mac OS X when
                    doing it in tb_find_slow */

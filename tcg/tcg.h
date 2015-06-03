@@ -184,11 +184,16 @@ typedef struct TCGPool {
 
 #define TCG_POOL_CHUNK_SIZE 32768
 
+#ifdef CONFIG_TCG_TAINT
+#define TCG_MAX_TEMPS 2048
+#define TCG_STATIC_CALL_ARGS_SIZE (32 * 10 * 2)
+#else
 #define TCG_MAX_TEMPS 512
 
 /* when the size of the arguments of a called function is smaller than
    this value, they are statically allocated in the TB stack frame */
 #define TCG_STATIC_CALL_ARGS_SIZE 128
+#endif
 
 typedef enum TCGType {
     TCG_TYPE_I32,

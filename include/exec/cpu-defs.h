@@ -119,7 +119,16 @@ QEMU_BUILD_BUG_ON(sizeof(CPUTLBEntry) != (1 << CPU_TLB_ENTRY_BITS));
 #endif
 
 
+
+#ifdef CONFIG_TCG_TAINT
+#define CPU_TEMP_BUF_NLONGS 1024
+// AWH - Was 256
+#else
 #define CPU_TEMP_BUF_NLONGS 128
+#endif /* CONFIG_TCG_TAINT */
+
+
+
 #define CPU_COMMON                                                      \
     /* soft mmu support */                                              \
     CPU_COMMON_TLB                                                      \

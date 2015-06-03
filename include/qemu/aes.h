@@ -4,6 +4,10 @@
 #define AES_MAXNR 14
 #define AES_BLOCK_SIZE 16
 
+#ifdef __cplusplus
+extern "C" {
+#endif // __cplusplus
+
 struct aes_key_st {
     uint32_t rd_key[4 *(AES_MAXNR + 1)];
     int rounds;
@@ -64,5 +68,11 @@ extern const uint32_t AES_Te0[256], AES_Te1[256], AES_Te2[256],
                       AES_Te3[256], AES_Te4[256];
 extern const uint32_t AES_Td0[256], AES_Td1[256], AES_Td2[256],
                       AES_Td3[256], AES_Td4[256];
+
+
+#ifdef __cplusplus
+}
+#endif // __cplusplus
+
 
 #endif

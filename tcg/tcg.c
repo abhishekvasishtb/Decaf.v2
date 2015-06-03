@@ -61,6 +61,11 @@
 
 #include "elf.h"
 
+#ifdef CONFIG_TCG_TAINT
+#include "shared/tainting/tcg_taint.h"
+#endif /* CONFIG_TCG_TAINT */
+
+
 /* Forward declarations for functions declared in tcg-target.c and used here. */
 static void tcg_target_init(TCGContext *s);
 static void tcg_target_qemu_prologue(TCGContext *s);
@@ -612,6 +617,10 @@ static void tcg_temp_free_internal(int idx)
     TCGContext *s = &tcg_ctx;
     TCGTemp *ts;
     int k;
+
+#ifdef CONFIG_TCG_TAINT
+    if (taint_tracking_enabled) return;
+#endif /* CONFIG_TCG_TAINT */
 
 #if defined(CONFIG_DEBUG_TCG)
     s->temps_in_use--;
@@ -1298,7 +1307,12 @@ static inline void tcg_la_bb_end(TCGContext *s, uint8_t *dead_temps,
 /* Liveness analysis : update the opc_dead_args array to tell if a
    given input arguments is dead. Instructions updating dead
    temporaries are removed. */
+//AVB, this function was not changed according to the original one
+#ifdef CONFIG_TCG_TAINT
+void tcg_liveness_analysis(TCGContext *s, int presweep)
+#else
 static void tcg_liveness_analysis(TCGContext *s)
+#endif
 {
     uint8_t *dead_temps, *mem_temps;
     int oi, oi_prev, nb_ops;
@@ -2276,16 +2290,24 @@ static inline int tcg_gen_code_common(TCGContext *s,
     s->opt_time -= profile_getclock();
 #endif
 
+
+
+#ifndef CONFIG_TCG_TAINT
 #ifdef USE_TCG_OPTIMIZATIONS
     tcg_optimize(s);
 #endif
+#endif /* CONFIG_TCG_TAINT */
 
 #ifdef CONFIG_PROFILER
     s->opt_time += profile_getclock();
     s->la_time -= profile_getclock();
 #endif
 
+#ifdef CONFIG_TCG_TAINT
+    tcg_liveness_analysis(s, 0);
+#else
     tcg_liveness_analysis(s);
+#endif
 
 #ifdef CONFIG_PROFILER
     s->la_time += profile_getclock();

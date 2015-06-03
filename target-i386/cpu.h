@@ -798,12 +798,25 @@ typedef enum TPRAccess {
 typedef struct CPUX86State {
     /* standard registers */
     target_ulong regs[CPU_NB_REGS];
+
+#ifdef CONFIG_TCG_TAINT
+    target_ulong taint_regs[CPU_NB_REGS];
+    target_ulong tempidx; // AWH - added for DECAF
+    target_ulong tempidx2; // AWH - added for DECAF
+    target_ulong eip_taint; // AWH - EIP callback
+#endif /* CONFIG_TCG_TAINT */
+
+
     target_ulong eip;
     target_ulong eflags; /* eflags register. During CPU emulation, CC
                         flags and DF are set to zero because they are
                         stored elsewhere */
 
     /* emulator internal eflags handling */
+#ifdef CONFIG_TCG_TAINT
+    target_ulong taint_cc_src, taint_cc_dst;
+#endif /* CONFIG_TCG_TAINT */
+
     target_ulong cc_dst;
     target_ulong cc_src;
     target_ulong cc_src2;
@@ -834,6 +847,12 @@ typedef struct CPUX86State {
     unsigned int fpstt; /* top of stack index */
     uint16_t fpus;
     uint16_t fpuc;
+
+      // AWH
+    target_ulong fpip_t; //added by Heng Yin for better FPU emulation
+    target_ulong fpcs_t; //added by Heng Yin for better FPU emulation
+    target_ulong branch_cnt;    //JMK: added by manju mjayacha@syr.edu to store the branch count value
+
     uint8_t fptags[8];   /* 0 = valid, 1 = empty */
     FPReg fpregs[8];
     /* KVM-only so far */
@@ -852,6 +871,12 @@ typedef struct CPUX86State {
     XMMReg xmm_t0;
     MMXReg mmx_t0;
 
+
+#ifdef CONFIG_TCG_TAINT
+    target_ulong taint_cc_tmp;
+#endif /* CONFIG_TCG_TAINT */
+
+    
     uint64_t opmask_regs[NB_OPMASK_REGS];
 
     /* sysenter registers */
