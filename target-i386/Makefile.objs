@@ -7,3 +7,5 @@ obj-$(CONFIG_KVM) += kvm.o
 obj-$(call lnot,$(CONFIG_KVM)) += kvm-stub.o
 obj-$(CONFIG_LINUX_USER) += ioport-user.o
 obj-$(CONFIG_BSD_USER) += ioport-user.o
+obj-y += DECAF_target.o
+

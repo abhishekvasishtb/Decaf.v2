@@ -33,9 +33,9 @@ http://code.google.com/p/decaf-platform/
 #include "qemu-common.h"
 #include "cpu.h"
 //#include "taintcheck.h"
-#include "targphys.h"
-#include "compiler.h"
-#include "monitor.h"
+// AWH #include "targphys.h"
+// AWH #include "compiler.h"
+#include "monitor/monitor.h"
 // AWH #include "shared/disasm.h"
 #include "shared/DECAF_callback.h"
 

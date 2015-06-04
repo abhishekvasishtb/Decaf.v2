@@ -2755,12 +2755,13 @@ int main(int argc, char **argv, char **envp)
     const char *boot_order = NULL;
     const char *boot_once = NULL;
 
-    const char *after_loadvm = NULL; // AWH
-    const char *load_plugin = NULL; // AWH
+    const char *load_plugin = NULL;
+#if 0 // AWH - FIXME
+    const char *after_loadvm = NULL;
 #ifdef CONFIG_VMI_ENABLE
     FILE *vmi_profile_fp = NULL;
 #endif
-
+#endif // AWH
 
     DisplayState *ds;
     int cyls, heads, secs, translation;
@@ -3394,17 +3395,19 @@ int main(int argc, char **argv, char **envp)
                 loadvm = optarg;
                 break;
 
-// AWH
+#if 0 // AWH - FIXME
             case QEMU_OPTION_after_loadvm:      // TEMU option
                 after_loadvm = optarg;
                 break;
+#endif // AWH
             case QEMU_OPTION_load_plugin:       // DECAF option
                 load_plugin = optarg;
                 break;
+#if 0 // AWH - FIXME
             case QEMU_OPTION_toggle_kvm:
                 DECAF_kvm_enabled = optarg;
                 break;
-
+#endif // AWH
 // AVB end
             case QEMU_OPTION_full_screen:
                 full_screen = 1;

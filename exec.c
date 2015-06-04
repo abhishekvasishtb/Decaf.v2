@@ -2418,6 +2418,7 @@ bool address_space_read(AddressSpace *as, hwaddr addr, uint8_t *buf, int len)
 void DECAF_physical_memory_rw(CPUState* env, gpa_t addr, uint8_t *buf,
                             int len, int is_write)
 {
+#if 0 // AWH - FIXME
     int l, io_index;
     uint8_t *ptr;
     uint32_t val;
@@ -2505,6 +2506,7 @@ void DECAF_physical_memory_rw(CPUState* env, gpa_t addr, uint8_t *buf,
         buf += l;
         addr += l;
     }
+#endif // AWH
 }
 
 

@@ -147,7 +147,7 @@ static const int tcg_target_call_oarg_regs[] = {
 # define have_bmi2 0
 #endif
 
-
+#if 0 /* AWH - FIXME */
 /* AWH - Memory callback logic to be called via TCG calls */
 static void REGPARM ldb_cb(unsigned long addr, gva_t vaddr) {
 //fprintf(stderr, "ldb_cb: %08x %08x\n", addr, vaddr);
@@ -252,7 +252,7 @@ static void REGPARM taint_stq_cb(unsigned long addr, gva_t vaddr, unsigned long 
   if(DECAF_is_callback_needed(DECAF_MEM_WRITE_CB))
     helper_DECAF_invoke_mem_write_callback(vaddr,qemu_ram_addr_from_host_nofail((void *)(addr)), value, 8);
 }
-
+#endif /* AWH */
 
 static tcg_insn_unit *tb_ret_addr;
 
@@ -1681,7 +1681,7 @@ static void tcg_out_qemu_ld(TCGContext *s, const TCGArg *args, bool is64)
     s_bits = opc & MO_SIZE;
 
     /* AWH - Save the virtual address */
-    tcg_out_push(s, args[addrlo_idx]);
+    tcg_out_push(s, /*args[addrlo_idx]*/addrlo);
 
     tcg_out_tlb_load(s, addrlo, addrhi, mem_index, s_bits,
        label_ptr, offsetof(CPUTLBEntry, addr_read));
@@ -1690,15 +1690,16 @@ static void tcg_out_qemu_ld(TCGContext *s, const TCGArg *args, bool is64)
     /* AWH - Before we call the functionality in the function 
        tcg_out_qemu_ld_direct(), we push some parms, call our "raw" taint load 
        functions, pop the original parms, and then call tcg_out_qemu_ld_direct(). */
-    tcg_out_pop(s, args[addrlo_idx]);
+    tcg_out_pop(s, /*args[addrlo_idx]*/addrlo);
 
       if (s_bits == 3)
-        tcg_out_push(s, data_reg2);
-      tcg_out_push(s, data_reg);
+        tcg_out_push(s, /*data_reg2*/datahi);
+      tcg_out_push(s, /*data_reg*/datalo);
       tcg_out_push(s, tcg_target_call_iarg_regs[0]);
       tcg_out_push(s, tcg_target_call_iarg_regs[1]);
       tcg_out_mov(s, TCG_TYPE_I32,
-        tcg_target_call_iarg_regs[1], args[addrlo_idx]);
+        tcg_target_call_iarg_regs[1], /*args[addrlo_idx]*/addrlo);
+#if 0 /* AWH - FIXME */
       switch (s_bits) {
         case 0:
         case 0 | 4:
@@ -1717,14 +1718,15 @@ static void tcg_out_qemu_ld(TCGContext *s, const TCGArg *args, bool is64)
         default:
           tcg_abort();
       }
+#endif /* AWH */
       tcg_out_pop(s, tcg_target_call_iarg_regs[1]);
       tcg_out_pop(s, tcg_target_call_iarg_regs[0]);
-      tcg_out_pop(s, data_reg);
+      tcg_out_pop(s, /*data_reg*/datalo);
       if (s_bits == 3)
-        tcg_out_pop(s, data_reg2);
+        tcg_out_pop(s, /*data_reg2*/datahi);
 
     /* AWH - Pop the virtual address off the stack */
-    tcg_out_pop(s, args[addrlo_idx]);
+    tcg_out_pop(s, /*args[addrlo_idx]*/addrlo);
 
     tcg_out_qemu_ld_direct(s, datalo, datahi, TCG_REG_L1, 0, 0, opc);
 
@@ -1855,7 +1857,7 @@ static void tcg_out_qemu_st(TCGContext *s, const TCGArg *args, bool is64)
 
 
 /* AWH - Save the virtual address */
-    tcg_out_push(s, args[addrlo_idx]);
+    tcg_out_push(s, /*args[addrlo_idx]*/addrlo);
 
 
     tcg_out_tlb_load(s, addrlo, addrhi, mem_index, s_bits,
@@ -1864,15 +1866,15 @@ static void tcg_out_qemu_st(TCGContext *s, const TCGArg *args, bool is64)
     /* TLB Hit.  */
 
     /* AWH - Restore the virtual address */
-    tcg_out_pop(s, args[addrlo_idx]);
-    tcg_out_push(s, data_reg); // Store for call to qemu_st_direct() below
+    tcg_out_pop(s, /*args[addrlo_idx]*/addrlo);
+    tcg_out_push(s, /*data_reg*/datalo); // Store for call to qemu_st_direct() below
     tcg_out_push(s, tcg_target_call_iarg_regs[0]); // Same
 
     tcg_out_mov(s, TCG_TYPE_I32,
-      tcg_target_call_iarg_regs[1], args[addrlo_idx]);
+      tcg_target_call_iarg_regs[1], /*args[addrlo_idx]*/addrlo);
     tcg_out_mov(s, TCG_TYPE_I32,
       tcg_target_call_iarg_regs[2], args[0]); //store the value write to memory
-
+#if 0 /* AWH - FIXME */
       switch (opc) {
         case 0:
           tcg_out_calli(s, (tcg_target_long)stb_cb);
@@ -1890,16 +1892,16 @@ static void tcg_out_qemu_st(TCGContext *s, const TCGArg *args, bool is64)
         default:
           tcg_abort();
       }
-
+#endif /* AWH */
     tcg_out_pop(s, tcg_target_call_iarg_regs[0]); // Pop for call to qemu_st_direct() below
-    tcg_out_pop(s, data_reg); // Same
+    tcg_out_pop(s, /*data_reg*/datalo); // Same
 
 
 
     tcg_out_qemu_st_direct(s, datalo, datahi, TCG_REG_L1, 0, 0, opc);
 
  /* AWH - Pop the virtual address off the stack */
-    tcg_out_pop(s, args[addrlo_idx]);
+    tcg_out_pop(s, /*args[addrlo_idx]*/addrlo);
 
 
     /* Record the current context of a store into ldst label */

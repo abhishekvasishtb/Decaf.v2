@@ -39,7 +39,7 @@ int DECAF_is_BlockEndCallback_needed(gva_t from, gva_t to);
 
 //This is needed since tlb_exec_cb doesn't go into tb and therefore not in helper.h
 #ifdef CONFIG_VMI_ENABLE
-void DECAF_invoke_tlb_exec_callback(CPUState *env, gva_t vaddr);
+void DECAF_invoke_tlb_exec_callback(/*CPUState*/CPUArchState *env, gva_t vaddr);
 #endif
 
 void helper_DECAF_invoke_nic_rec_callback(const uint8_t * buf, int size, int cur_pos, int start, int stop);

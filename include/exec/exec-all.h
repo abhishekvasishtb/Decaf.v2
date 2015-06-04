@@ -103,6 +103,7 @@ typedef struct TranslationBlock TranslationBlock;
 /* XXX: make safe guess about sizes */
 #define OPC_BUF_SIZE 640
 #endif /* CONFIG_TCG_TAINT */
+#define MAX_OP_PER_INSTR (OPC_BUF_SIZE - 208)
 #define OPC_MAX_SIZE (OPC_BUF_SIZE - MAX_OP_PER_INSTR)
 
 /* Maximum size a TCG op can expand to.  This is complicated because a
