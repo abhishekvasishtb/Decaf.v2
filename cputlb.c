@@ -321,7 +321,7 @@ void tlb_set_page(CPUState *cpu, target_ulong vaddr,
 
 #ifdef CONFIG_VMI_ENABLE
         if (DECAF_is_callback_needed(DECAF_TLB_EXEC_CB))
-            DECAF_invoke_tlb_exec_callback(env, vaddr);
+            DECAF_invoke_tlb_exec_callback(/*AWH env*/cpu->env_ptr, vaddr);
 #endif /* CONFIG_VMI_ENABLE */
 
 

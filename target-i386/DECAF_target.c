@@ -24,6 +24,8 @@ http://code.google.com/p/decaf-platform/
 #include "shared/DECAF_callback.h"
 #include "shared/hookapi.h" // AWH
 #include "DECAF_target.h"
+extern void * cpu_single_env; // AWH
+
 // Deprecated
 int DECAF_emulation_started = 0;
 
@@ -108,23 +110,25 @@ void DECAF_update_cpl(int cpl)
 #endif
 
 
-gpa_t DECAF_get_phys_addr_with_pgd(CPUState* env, gpa_t pgd, gva_t addr)
+gpa_t DECAF_get_phys_addr_with_pgd(CPUState* _env, gpa_t pgd, gva_t addr)
 {
 
-  if (env == NULL)
+  if (_env == NULL)
   {
 #ifdef DECAF_NO_FAIL_SAFE
     return (INV_ADDR);
 #else
-    env = cpu_single_env ? cpu_single_env : first_cpu;
+    _env = cpu_single_env ? cpu_single_env : first_cpu;
 #endif
   }
+  X86CPU *cpu = X86_CPU(_env); /* AWH */
+  CPUX86State *env = &cpu->env;
 
   target_ulong saved_cr3 = env->cr[3];
   uint32_t phys_addr;
 
   env->cr[3] = pgd;
-  phys_addr = cpu_get_phys_page_debug(env, addr & TARGET_PAGE_MASK);
+  phys_addr = cpu_get_phys_page_debug(_env, addr & TARGET_PAGE_MASK);
 
   env->cr[3] = saved_cr3;
   return (phys_addr | (addr & (~TARGET_PAGE_MASK)));
@@ -150,19 +154,22 @@ void DECAF_after_iret_protected(void)
 }
 #endif
 
-int DECAF_get_page_access(CPUState* env, uint32_t addr)
+int DECAF_get_page_access(CPUState* _env, uint32_t addr)
 {
     uint32_t pde_addr, pte_addr;
     uint32_t pde, pte;
 
-    if (env == NULL)
+    if (_env == NULL)
     {
   #ifdef DECAF_NO_FAIL_SAFE
       return (INV_ADDR);
   #else
-      env = cpu_single_env ? cpu_single_env : first_cpu;
+      _env = cpu_single_env ? cpu_single_env : first_cpu;
   #endif
     }
+
+    X86CPU *cpu = X86_CPU(_env); /* AWH */
+    CPUX86State *env = &cpu->env;
 
     if (env->cr[4] & CR4_PAE_MASK) {
 	uint32_t pdpe_addr, pde_addr, pte_addr;

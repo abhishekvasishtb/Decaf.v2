@@ -209,8 +209,10 @@ extern void DECAF_register_insn_cb_range(uint32_t start_opcode, uint32_t end_opc
 extern int DECAF_get_page_access(CPUState* env, gva_t addr);
 
 /// Check if the current execution of guest system is in kernel mode (i.e., ring-0)
-static inline int DECAF_is_in_kernel(CPUState *_env)
+static inline int DECAF_is_in_kernel(CPUState *env)
 {
+  X86CPU *cpu = X86_CPU(env);
+  CPUX86State *_env = &cpu->env;
   return ((_env->hflags & HF_CPL_MASK) == 0);
 }
 #if 0 // AWH
@@ -364,17 +366,23 @@ static inline void DECAF_write_register(int reg_id, void *buf)
 
 static inline gva_t DECAF_getPC(CPUState* env)
 {
-  return (env->eip + env->segs[R_CS].base);
+  X86CPU *cpu = X86_CPU(env); /* AWH */
+  CPUX86State *_env = &cpu->env;
+  return ( _env->eip + _env->segs[R_CS].base);
 }
 
 static inline gpa_t DECAF_getPGD(CPUState* env)
 {
-  return (env->cr[3]);
+  X86CPU *cpu = X86_CPU(env); /* AWH */
+  CPUX86State *_env = &cpu->env;
+  return (_env->cr[3]);
 }
 
 static inline gva_t DECAF_getESP(CPUState* env)
 {
-  return (env->regs[R_ESP]);
+  X86CPU *cpu = X86_CPU(env); /* AWH */
+  CPUX86State *_env = &cpu->env;
+  return (_env->regs[R_ESP]);
 }
 
 #ifdef __cplusplus
