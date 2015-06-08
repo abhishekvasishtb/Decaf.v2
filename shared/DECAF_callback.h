@@ -79,7 +79,7 @@ extern void helper_DECAF_invoke_insn_end_callback(CPUState* env);
 extern void helper_DECAF_invoke_eip_check_callback(gva_t source_eip, gva_t target_eip, gva_t target_eip_taint);
 extern void helper_DECAF_invoke_opcode_range_callback(
   CPUState *env,
-  target_ulong eip,
+  target_ulong *eip__, /* AWH */
   target_ulong next_eip,
   uint32_t op);
 extern void DECAF_callback_init(void);

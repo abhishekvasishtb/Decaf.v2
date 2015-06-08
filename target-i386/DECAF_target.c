@@ -177,13 +177,13 @@ int DECAF_get_page_access(CPUState* _env, uint32_t addr)
 
 	pdpe_addr = ((env->cr[3] & ~0x1f) + ((addr >> 30) << 3)) &
 	    env->a20_mask;
-	pdpe = ldl_phys(pdpe_addr);
+	pdpe = ldl_phys(/*AWH*/_env->as, pdpe_addr);
 	if (!(pdpe & PG_PRESENT_MASK))
 	    return -1;
 
 	pde_addr = ((pdpe & ~0xfff) + (((addr >> 21) & 0x1ff) << 3)) &
 	    env->a20_mask;
-	pde = ldl_phys(pde_addr);
+	pde = ldl_phys(/*AWH*/_env->as, pde_addr);
 	if (!(pde & PG_PRESENT_MASK)) {
 	    return -1;
 	}
@@ -195,7 +195,7 @@ int DECAF_get_page_access(CPUState* _env, uint32_t addr)
 	/* 4 KB page */
 	pte_addr = ((pde & ~0xfff) + (((addr >> 12) & 0x1ff) << 3)) &
 	    env->a20_mask;
-	pte = ldl_phys(pte_addr);
+	pte = ldl_phys(/*AWH*/_env->as, pte_addr);
 	if (!(pte & PG_PRESENT_MASK))
 	    return -1;
 	return (pte & PG_RW_MASK);
@@ -209,7 +209,7 @@ int DECAF_get_page_access(CPUState* _env, uint32_t addr)
     /* page directory entry */
     pde_addr =
 	((env->cr[3] & ~0xfff) + ((addr >> 20) & ~3)) & env->a20_mask;
-    pde = ldl_phys(pde_addr);
+    pde = ldl_phys(/*AWH*/_env->as, pde_addr);
     if (!(pde & PG_PRESENT_MASK))
 	return -1;
     if ((pde & PG_PSE_MASK) && (env->cr[4] & CR4_PSE_MASK)) {
@@ -219,7 +219,7 @@ int DECAF_get_page_access(CPUState* _env, uint32_t addr)
 
     /* page directory entry */
     pte_addr = ((pde & ~0xfff) + ((addr >> 10) & 0xffc)) & env->a20_mask;
-    pte = ldl_phys(pte_addr);
+    pte = ldl_phys(/*AWH*/_env->as, pte_addr);
     if (!(pte & PG_PRESENT_MASK))
 	return -1;
 

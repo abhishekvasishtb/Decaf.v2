@@ -163,7 +163,7 @@ typedef struct _DECAF_Keystroke_Params
 
 typedef struct _DECAF_Nic_Rec_Params
 {
-	uint8_t *buf;
+	const uint8_t *buf; /* AWH - const */
 	int32_t size;
 	int32_t cur_pos;
 	int32_t start;
@@ -174,7 +174,7 @@ typedef struct _DECAF_Nic_Send_Params
 {
 	uint32_t addr;
 	int size;
-	uint8_t *buf;
+	const uint8_t *buf; /* AWH - const */
 }DECAF_Nic_Send_Params;
 
 typedef struct _DECAF_Read_Taint_Mem

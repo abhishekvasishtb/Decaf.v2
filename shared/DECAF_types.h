@@ -27,6 +27,7 @@ http://code.google.com/p/decaf-platform/
 #endif /* __cplusplus */
 #include <stdint.h>
 #include "qemu-common.h"
+#include "exec/cpu-defs.h" /* AWH */
 
 typedef target_ulong gva_t;
 //Interestingly enough - target_phys_addr_t is defined as uint64 - what to do?

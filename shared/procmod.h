@@ -16,7 +16,7 @@ http://code.google.com/p/decaf-platform/
 #ifndef _PROCMOD_H_INCLUDED
 #define _PROCMOD_H_INCLUDED
 
-#include "monitor.h" // AWH
+#include "monitor/monitor.h"
 #include "shared/DECAF_types.h"
 
 

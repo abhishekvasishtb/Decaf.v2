@@ -22,7 +22,7 @@
  */
 
 #include <dlfcn.h>
-#include "sysemu.h"
+#include "sysemu/sysemu.h"
 
 #include "shared/DECAF_main.h"
 #include "shared/DECAF_main_internal.h"
@@ -62,7 +62,6 @@ mon_cmd_t DECAF_info_cmds[] = {
 int g_bNeedFlush = 0;
 
 static void convert_endian_4b(uint32_t *data);
-
 
 static gpa_t _DECAF_get_phys_addr(CPUState* env, gva_t addr) {
 	int mmu_idx, index;

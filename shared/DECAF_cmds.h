@@ -23,8 +23,8 @@ http://code.google.com/p/decaf-platform/
 #ifndef DECAF_CMDS_H
 #define DECAF_CMDS_H
 
-#include "monitor.h"
-#include "qdict.h"
+#include "monitor/monitor.h"
+#include "qapi/qmp/qdict.h"
 
 #ifdef __cplusplus
 extern "C"

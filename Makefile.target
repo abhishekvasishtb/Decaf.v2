@@ -92,6 +92,18 @@ obj-$(CONFIG_TCG_INTERPRETER) += disas/tci.o
 obj-y += fpu/softfloat.o
 obj-y += target-$(TARGET_BASE_ARCH)/
 obj-y += disas.o
+# AWH - Originally in Makefile.objs
+libdecaf-y=DECAF_callback.o DECAF_main.o DECAF_cmds.o
+libdecaf-y+=hookapi.o read_linux.o procmod.o windows_vmi.o vmi.o vmi_c_wrapper.o
+libdecaf-y+=linux_procinfo.o linux_readelf.o linux_vmi.o
+libdecaf-y+=function_map.o
+libdecaf-y+=tainting/reduce_taint.o tainting/taintcheck_opt.o tainting/tainting.o
+libdecaf-y+=tainting/taint_memory.o tainting/tcg_taint.o
+libdecaf-y+=DECAF_vm_compress.o
+libdecaf-y+=utils/HashtableWrapper.o
+libdecaf-y+=utils/Output.o
+libdecaf-y+=utils/SimpleCallback.o
+LIBDECAF = $(addprefix shared/, $(libdecaf-y))
 obj-y += $(LIBDECAF)
 
 # HELPER_CFLAGS is used for all the code compiled with static register

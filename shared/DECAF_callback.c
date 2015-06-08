@@ -23,7 +23,7 @@ http://code.google.com/p/decaf-platform/
 #include <stdio.h>
 #include <inttypes.h>
 #include "qemu-common.h"
-#include "cpu-all.h"
+// AWH #include "cpu-all.h"
 #include "shared/DECAF_main.h"
 #include "shared/DECAF_callback.h"
 #include "shared/DECAF_callback_to_QEMU.h"
@@ -852,16 +852,27 @@ PUSH_ALL()
 POP_ALL()
 }
 
-void helper_DECAF_invoke_block_end_callback(CPUState* env, TranslationBlock* tb, gva_t from)
+void helper_DECAF_invoke_block_end_callback(CPUState* _env, TranslationBlock* tb, gva_t from)
 {
   static callback_struct_t *cb_struct, *cb_temp;
   static DECAF_Callback_Params params;
+  static CPUArchState *env; /* AWH */
+  if (_env == NULL) return;
 
-  if (env == NULL) return;
-
-  params.be.env = env;
+  params.be.env = _env;
   params.be.tb = tb;
   params.be.cur_pc = from;
+
+/* AWH - Cast the CPUState to the correct arch */
+#if defined(TARGET_I386)
+  env = &(X86_CPU(_env)->env);
+#elif defined(TARGET_ARM)
+  env = &(ARM_CPU(_env)->env);
+#elif defined(TARGET_MIPS)
+  env = &(MIPS_CPU(_env)->env);
+#else
+  fix this error
+#endif /* TARGET check */
 
 PUSH_ALL()
 
