@@ -32,7 +32,7 @@ extern "C"
 #endif
 
 //void do_linux_ps(Monitor *mon, const QDict* qdict);
-void do_guest_ps(Monitor *mon);
+void do_guest_ps(Monitor *mon, const QDict* qdict); /* AWH - qdict added */
 void do_guest_modules(Monitor *mon, const QDict *qdict);
 void do_toggle_kvm(Monitor *mon, const QDict *qdict);
 

@@ -37,6 +37,8 @@
 #include "tainting/taintcheck_opt.h"
 #endif /* CONFIG_TCG_TAINT */
 
+#include "tcg/tcg.h" /* AWH - For tcg_ctx */
+#include "exec/cputlb.h" /* AWH - For qemu_ram_addr_from_host_nofail() */
 #ifdef CONFIG_VMI_ENABLE
 extern void VMI_init(void);
 #endif
@@ -60,12 +62,19 @@ mon_cmd_t DECAF_info_cmds[] = {
 
 
 int g_bNeedFlush = 0;
-
+#if defined(TARGET_WORDS_BIGENDIAN)
 static void convert_endian_4b(uint32_t *data);
-
-static gpa_t _DECAF_get_phys_addr(CPUState* env, gva_t addr) {
+#endif /* TARGET_WORDS_BIGENDIAN */
+static gpa_t _DECAF_get_phys_addr(CPUState* _env, gva_t addr) {
 	int mmu_idx, index;
 	uint32_t phys_addr;
+#if defined(TARGET_I386) /* AWH */
+	CPUX86State *env = &(X86_CPU(_env)->env);
+#elif defined(TARGET_ARM)
+	CPUARMState *env = &(ARM_CPU(_env)->env);
+#elif defined(TARGET_MIPS)
+	CPUMIPSState *env = &(MIPS_CPU(_env)->env);
+#endif /* Arch cast */
 
 	index = (addr >> TARGET_PAGE_BITS) & (CPU_TLB_SIZE - 1);
 	mmu_idx = cpu_mmu_index(env);
@@ -75,7 +84,7 @@ static gpa_t _DECAF_get_phys_addr(CPUState* env, gva_t addr) {
 		if (__builtin_expect(
 				env->tlb_table[mmu_idx][index].addr_code
 						!= (addr & TARGET_PAGE_MASK), 0)) {
-			phys_addr = cpu_get_phys_page_debug(env, addr & TARGET_PAGE_MASK);
+			phys_addr = cpu_get_phys_page_debug(_env, addr & TARGET_PAGE_MASK);
 			if (phys_addr == -1)
 				return -1;
 			phys_addr += addr & (TARGET_PAGE_SIZE - 1);
@@ -208,12 +217,12 @@ static TranslationBlock *DECAF_tb_find_slow(CPUState *env, target_ulong pc) {
 	TranslationBlock *tb, **ptb1;
 	unsigned int h;
 
-	tb_invalidated_flag = 0;
+	tcg_ctx.tb_ctx.tb_invalidated_flag = 0;
 
 //DECAF_printf("DECAF_tb_find_slow: phys_pc=%08x\n", phys_pc);
 
 	for (h = 0; h < CODE_GEN_PHYS_HASH_SIZE; h++) {
-		ptb1 = &tb_phys_hash[h];
+		ptb1 = &tcg_ctx.tb_ctx.tb_phys_hash[h];
 		for (;;) {
 			tb = *ptb1;
 			if (!tb)
@@ -383,7 +392,7 @@ int do_unload_plugin(Monitor *mon, const QDict *qdict, QObject **ret_data) {
 }
 
 /* AWH - Fix for bugzilla bug #9 */
-static int runningState = 0;
+//static int runningState = 0;
 void DECAF_stop_vm(void) {
 	if (runstate_is_running()) {
         vm_stop(RUN_STATE_PAUSED);
@@ -538,6 +547,7 @@ void DECAF_init(void) {
 /*
  * NIC related functions
  */
+#if 0 /* AWH - FIXME */
 static void DECAF_virtdev_write_data(void *opaque, uint32_t addr, uint32_t val) {
 
 
@@ -572,6 +582,7 @@ void DECAF_virtdev_init(void) {
 		exit(-1);
 	}
 }
+#endif /* AWH */
 
 void DECAF_after_loadvm(const char *param) {
 	if (decaf_plugin && decaf_plugin->after_loadvm)
@@ -643,6 +654,7 @@ DECAF_errno_t DECAF_read_ptr(CPUState* env, gva_t vaddr, gva_t *pptr)
 	return ret;
 }
 
+#if defined(TARGET_WORDS_BIGENDIAN)
 static void convert_endian_4b(uint32_t *data)
 {
    *data = ((*data & 0xff000000) >> 24)
@@ -650,3 +662,5 @@ static void convert_endian_4b(uint32_t *data)
          | ((*data & 0x0000ff00) <<  8)
          | ((*data & 0x000000ff) << 24);
 }
+#endif /* TARGET_WORDS_BIGENDIAN */
+

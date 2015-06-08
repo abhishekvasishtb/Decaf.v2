@@ -33,10 +33,9 @@ http://code.google.com/p/decaf-platform/
 #include <string>
 #include <map>
 #include <list>
-#include "hw/hw.h"
-#include "qemu-queue.h"
-#include "qemu-common.h" // AWH - QEMUFile
-#include "DECAF_main.h" // AWH
+// AWH #include "hw/hw.h"
+#include "qemu/queue.h"
+#include "DECAF_main.h"
 #include "function_map.h"
 #include "hookapi.h"
 #include "DECAF_callback.h"

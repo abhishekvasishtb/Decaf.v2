@@ -32,10 +32,11 @@ http://code.google.com/p/decaf-platform/
 
 
 /* operating system information */
+/* AWH - used to be mhandler.info, but now a .cmd for ps */
 {
 	.name		= "guest_ps|ps",
 	.args_type	= "",
-	.mhandler.info	= do_guest_ps,
+	.mhandler.cmd	= do_guest_ps,
 	.params		= "", 
 	.help		= "list the processes on guest system"
 },

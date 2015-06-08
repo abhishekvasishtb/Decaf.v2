@@ -17,7 +17,7 @@ http://code.google.com/p/decaf-platform/
 #include "DECAF_cmds.h"
 #include "vmi_c_wrapper.h"
 
-void do_guest_ps(Monitor *mon)
+void do_guest_ps(Monitor *mon, const QDict *qdict)
 {
  VMI_list_processes(mon);
 }

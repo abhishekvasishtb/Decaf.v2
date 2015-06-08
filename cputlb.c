@@ -161,7 +161,7 @@ void tlb_reset_dirty_range(CPUTLBEntry *tlb_entry, uintptr_t start,
         }
     }
 }
-
+#if 0 /* AWH - Moved into include/exec/cputlb.h */
 static inline ram_addr_t qemu_ram_addr_from_host_nofail(void *ptr)
 {
     ram_addr_t ram_addr;
@@ -172,6 +172,7 @@ static inline ram_addr_t qemu_ram_addr_from_host_nofail(void *ptr)
     }
     return ram_addr;
 }
+#endif /* AWH */
 
 void cpu_tlb_reset_dirty_all(ram_addr_t start1, ram_addr_t length)
 {

@@ -18,7 +18,7 @@ http://code.google.com/p/decaf-platform/
 #include "sysemu/sysemu.h"
 // AWH FIXME #include "qemu-timer.h"
 #include "hw/hw.h"
-#include "hw/isa/isa.h"		/* for register_ioport_write */
+// AWH #include "hw/isa/isa.h"		/* for register_ioport_write */
 #include "sysemu/blockdev.h" // AWH
 #include "shared/DECAF_main.h" // AWH
 #include "shared/DECAF_callback.h"

@@ -30,6 +30,18 @@ void cpu_tlb_reset_dirty_all(ram_addr_t start1, ram_addr_t length);
 void tlb_set_dirty(CPUArchState *env, target_ulong vaddr);
 extern int tlb_flush_count;
 
+/* AWH - Pulled from cputlb.c so that DECAF logic can use it */
+static inline ram_addr_t qemu_ram_addr_from_host_nofail(void *ptr)
+{
+  ram_addr_t ram_addr;
+
+  if (qemu_ram_addr_from_host(ptr, &ram_addr) == NULL) {
+    fprintf(stderr, "Bad ram pointer %p\n", ptr);
+    abort();
+  }
+  return ram_addr;
+}
+
 /* exec.c */
 void tb_flush_jmp_cache(CPUState *cpu, target_ulong addr);
 
