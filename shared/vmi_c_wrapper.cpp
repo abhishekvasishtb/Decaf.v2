@@ -279,6 +279,7 @@ int VMI_get_guest_version_c(void)
 int VMI_get_current_tid_c(CPUState* _env)
 {
 #ifdef TARGET_I386
+	CPUX86State *env = &(X86_CPU(_env)->env);
 	uint32_t val;
 	uint32_t tid;
 
@@ -290,10 +291,10 @@ int VMI_get_current_tid_c(CPUState* _env)
 		return -1;
 
 	if (!DECAF_is_in_kernel(_env)) { // user module
-		if (DECAF_read_mem(_env, /* AWH cpu_single*/_env->segs[R_FS].base + 0x18, 4, &val) != -1
+		if (DECAF_read_mem(_env, /* AWH cpu_single*/env->segs[R_FS].base + 0x18, 4, &val) != -1
 				&& DECAF_read_mem(_env, val + 0x24, 4, &tid) != -1)
 			return tid;
-	} else if (DECAF_read_mem(_env, /* AWH cpu_single*/_env->segs[R_FS].base + 0x124, 4, &val)
+	} else if (DECAF_read_mem(_env, /* AWH cpu_single*/env->segs[R_FS].base + 0x124, 4, &val)
 			!= -1 && DECAF_read_mem(_env, val + 0x1F0, 4, &tid) != -1)
 		return tid;
 #endif

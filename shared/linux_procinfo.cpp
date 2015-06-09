@@ -51,6 +51,7 @@ extern "C" {
 #include "cpu.h"
 #include "config.h"
 #include "hw/hw.h" // AWH  
+#include "exec/user/abitypes.h" // AWH
 #include "DECAF_main.h"
 #include "DECAF_target.h"
 #ifdef __cplusplus
@@ -118,13 +119,13 @@ static inline int isPrintableASCII(target_ulong x)
 
 typedef target_ptr gva_t;
 typedef target_ulong gpa_t;
-typedef target_int target_pid_t;
+typedef /*AWH target_int*/abi_int target_pid_t;
 
 //Here are some definitions straight from page_types.h
 
-#define INV_ADDR ((target_ulong) -1)
-#define INV_OFFSET ((target_ulong) -1)
-#define INV_UINT ((target_uint) -1)
+#define INV_ADDR ((/*AWH target*/abi_ulong) -1)
+#define INV_OFFSET ((/*AWH target*/abi_ulong) -1)
+#define INV_UINT ((/*AWH target*/abi_uint) -1)
 
 #if defined(TARGET_I386) || defined(TARGET_ARM)//  || defined(TARGET_MIPS)
   //this is the default value - but keep in mind that a custom built
@@ -252,9 +253,9 @@ static inline target_ulong get_target_ulong_at(CPUState *env, gva_t addr)
   return val;
 }
 
-static inline target_uint get_uint32_at(CPUState *env, gva_t addr)
+static inline /*AWH target*/abi_uint get_uint32_at(CPUState *env, gva_t addr)
 {
-  target_uint val;
+  /*AWH target*/abi_uint val;
   if (DECAF_read_mem(env, addr, sizeof(uint32_t), &val) < 0)
     return (INV_UINT);
   return val;
@@ -679,7 +680,7 @@ gva_t findCommFromTaskStruct(CPUState * env, gva_t ts, ProcInfo* pPI)
   }
 
   //once again we are assuming that things are aligned
-  for (i = 0; i < MAX_TASK_STRUCT_SEARCH_SIZE; i+=sizeof(target_ulong)) 
+  for (i = 0; i < MAX_TASK_STRUCT_SEARCH_SIZE; i+=sizeof(/*AWH target*/abi_ulong)) 
   {
     temp2 = ts + i;
     if (get_uint32_at(env, temp2) == intSWAP)
@@ -1269,7 +1270,7 @@ int getDentryFromFile(CPUState * env, gva_t file, ProcInfo* pPI)
 #define IS_UID(_x) (_x < 0x0000FFFF)
 int populate_cred_struct_offsets(CPUState * env, gva_t cred, ProcInfo* pPI)
 {
-  target_ulong i = sizeof(target_int);
+  /*AWH target*/abi_ulong i = sizeof(/*AWH target*/abi_int);
 
   if (pPI == NULL)
   {
@@ -1281,15 +1282,15 @@ int populate_cred_struct_offsets(CPUState * env, gva_t cred, ProcInfo* pPI)
     return (-1);
   }
 
-  for (i = sizeof(target_int); i < MAX_CRED_STRUCT_SEARCH_SIZE; i += sizeof(target_int))
+  for (i = sizeof(/*AWH target*/abi_int); i < MAX_CRED_STRUCT_SEARCH_SIZE; i += sizeof(/*AWH target*/abi_int))
   {
     if (
          IS_UID(get_uint32_at(env, cred + i)) //uid
-         && IS_UID(get_uint32_at(env, cred + i + sizeof(target_int))) //gid
-         && IS_UID(get_uint32_at(env, cred + i + (sizeof(target_int) * 2))) //suid
-         && IS_UID(get_uint32_at(env, cred + i + (sizeof(target_int) * 3))) //sgid
-         && IS_UID(get_uint32_at(env, cred + i + (sizeof(target_int) * 4))) //euid
-         && IS_UID(get_uint32_at(env, cred + i + (sizeof(target_int) * 5))) //egid
+         && IS_UID(get_uint32_at(env, cred + i + sizeof(/*AWH target*/abi_int))) //gid
+         && IS_UID(get_uint32_at(env, cred + i + (sizeof(/*AWH target*/abi_int) * 2))) //suid
+         && IS_UID(get_uint32_at(env, cred + i + (sizeof(/*AWH target*/abi_int) * 3))) //sgid
+         && IS_UID(get_uint32_at(env, cred + i + (sizeof(/*AWH target*/abi_int) * 4))) //euid
+         && IS_UID(get_uint32_at(env, cred + i + (sizeof(/*AWH target*/abi_int) * 5))) //egid
        )
     {
       if (pPI->cred_uid == INV_OFFSET)
@@ -1298,15 +1299,15 @@ int populate_cred_struct_offsets(CPUState * env, gva_t cred, ProcInfo* pPI)
       }
       if (pPI->cred_gid == INV_OFFSET)
       {
-        pPI->cred_gid = i + sizeof(target_int);
+        pPI->cred_gid = i + sizeof(/*AWH target*/abi_int);
       }
       if (pPI->cred_euid == INV_OFFSET)
       {
-        pPI->cred_euid = i + (sizeof(target_int) * 4);
+        pPI->cred_euid = i + (sizeof(/*AWH target*/abi_int) * 4);
       }
       if (pPI->cred_egid == INV_OFFSET)
       {
-        pPI->cred_egid = i + (sizeof(target_int) * 5);
+        pPI->cred_egid = i + (sizeof(/*AWH target*/abi_int) * 5);
       }
       break;
     }
@@ -1341,9 +1342,9 @@ int populate_dentry_struct_offsets(CPUState *env, gva_t dentry, ProcInfo* pPI)
   if (isOffsetPopulated)
     return (0);
 
-  target_ulong i = 0;
-  target_ulong parent = 0;
-  target_ulong chr = 0;
+  /*AWH target*/abi_ulong i = 0;
+  /*AWH target*/abi_ulong parent = 0;
+  /*AWH target*/abi_ulong chr = 0;
 
   if (pPI == NULL)
   {
@@ -1357,7 +1358,7 @@ int populate_dentry_struct_offsets(CPUState *env, gva_t dentry, ProcInfo* pPI)
 
   // Kevin W: Here we try to find the d_iname.  The trick is to find the string which
   // contains "ld-linux.so", which is the dynamic library loader for linux
-  for (i = 0; i < MAX_DENTRY_STRUCT_SEARCH_SIZE; i+=sizeof(target_ulong))
+  for (i = 0; i < MAX_DENTRY_STRUCT_SEARCH_SIZE; i+=sizeof(/*AWH target*/abi_ulong))
   {
     char lib_name[11];
     if (DECAF_read_mem(env, dentry+i, sizeof(lib_name), lib_name) < 0)
@@ -1378,7 +1379,7 @@ int populate_dentry_struct_offsets(CPUState *env, gva_t dentry, ProcInfo* pPI)
   }
 
   //now find d_parent 
-  for (i = 0; i < MAX_DENTRY_STRUCT_SEARCH_SIZE; i+=sizeof(target_ulong))
+  for (i = 0; i < MAX_DENTRY_STRUCT_SEARCH_SIZE; i+=sizeof(/*AWH target*/abi_ulong))
   {
     //d_parent is preceded by an hlist - so we look for that first
     if ( 

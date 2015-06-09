@@ -38,6 +38,7 @@ extern "C" {
 #include <tr1/unordered_map>
 #include <stdlib.h>
 
+extern void * cpu_single_env; // AWH
 
 #define GUEST_MESSAGE_LEN 512
 #define GUEST_MESSAGE_LEN_MINUS_ONE 511
@@ -411,7 +412,7 @@ int is_guest_windows()
     //FIXME: we use a very simple hack here. Windows uses FS segment register to store 
     // the current process context, while Linux does not. We may need better heuristics 
     // when we need to support more guest systems.
-    return (cpu_single_env->segs[R_FS].selector != 0);
+    return ((X86_CPU((CPUState *)cpu_single_env)->env).segs[R_FS].selector != 0);
 #endif
     return 0;
 }

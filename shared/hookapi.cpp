@@ -33,7 +33,7 @@ http://code.google.com/p/decaf-platform/
 #include <string>
 #include <map>
 #include <list>
-// AWH #include "hw/hw.h"
+#include "hw/hw.h"
 #include "qemu/queue.h"
 #include "DECAF_main.h"
 #include "function_map.h"
@@ -41,6 +41,8 @@ http://code.google.com/p/decaf-platform/
 #include "DECAF_callback.h"
 #include "DECAF_types.h"
 #include "DECAF_target.h"
+
+extern void * cpu_single_env; // AWH
 
 //LOK: Since the old interface registered for ALL possible basic blocks,
 // the addition of the optimized basic block callback means that
@@ -200,8 +202,8 @@ static void hookapi_check_hook(DECAF_Callback_Params* params)
 {
         if(cpu_single_env == NULL) return;
 
-        target_ulong pc = DECAF_getPC(cpu_single_env);
-        target_ulong pgd = DECAF_getPGD(cpu_single_env);
+        target_ulong pc = DECAF_getPC((CPUState *)cpu_single_env);
+        target_ulong pgd = DECAF_getPGD((CPUState *)cpu_single_env);
 
     struct hookapi_record_list_head *head =
               &hookapi_record_heads[pc & (HOOKAPI_HTAB_SIZE - 1)];
@@ -232,7 +234,7 @@ static void hookapi_check_hook(DECAF_Callback_Params* params)
             //the recorded ESP must be close enough to the current ESP.
             //otherwise, it must be a return hook for the same function call in a different thread.
             //The threshold 80 is based on that normally no function has more than 20 arguments.
-            if(record->esp && DECAF_getESP(cpu_single_env) - record->esp > 80)
+            if(record->esp && DECAF_getESP((CPUState *)cpu_single_env) - record->esp > 80)
                 continue;
 
             record->fnhook(record->opaque);
@@ -440,8 +442,8 @@ hookapi_hook_return(
   record->eip = pc;
   record->is_global = 0;
 
-  record->esp = DECAF_getESP(cpu_single_env);
-  record->cr3 = DECAF_getPGD(cpu_single_env);
+  record->esp = DECAF_getESP((CPUState *)cpu_single_env);
+  record->cr3 = DECAF_getPGD((CPUState *)cpu_single_env);
 
   record->fnhook = fnhook;
   record->sizeof_opaque = sizeof_opaque;

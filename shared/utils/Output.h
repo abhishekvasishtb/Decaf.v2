@@ -24,7 +24,7 @@ http://code.google.com/p/decaf-platform/
 #define OUTPUT_H_
 
 #include <stdio.h>
-#include "monitor.h"
+#include "monitor/monitor.h"
 
 #ifdef __cplusplus
 extern "C"

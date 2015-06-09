@@ -45,7 +45,7 @@ extern "C" {
 #include "cpu.h"
 #include "config.h"
 #include "hw/hw.h" // AWH
-#include "qemu-timer.h"
+#include "qemu/timer.h"
 #ifdef __cplusplus
 };
 #endif /* __cplusplus */
@@ -905,8 +905,8 @@ void Linux_tlb_call_back(DECAF_Callback_Params *temp)
 static void check_procexit(void *) {
         /* AWH - cpu_single_env is invalid outside of the main exec thread */
 	CPUState *env = /* AWH cpu_single_env ? cpu_single_env :*/ first_cpu;
-	qemu_mod_timer(recon_timer,
-				   qemu_get_clock_ns(vm_clock) + get_ticks_per_sec() * 10);
+	/*AWH qemu_mod_timer*/timer_mod_ns(recon_timer,
+		qemu_clock_get_ns(/*AWH vm_clock*/QEMU_CLOCK_VIRTUAL) + get_ticks_per_sec() * 10);
 
 	target_ulong next_task = OFFSET_PROFILE.init_task_addr;
 	set<target_ulong> live_pids;
@@ -1024,9 +1024,9 @@ void linux_vmi_init()
 
 	DECAF_register_callback(DECAF_TLB_EXEC_CB, Linux_tlb_call_back, NULL);
 
-	recon_timer = qemu_new_timer_ns(vm_clock, check_procexit, 0);
-	qemu_mod_timer(recon_timer,
-				   qemu_get_clock_ns(vm_clock) + get_ticks_per_sec() * 20);
+	recon_timer = /*AWH qemu_new_timer_ns*/timer_new_ns(/*AWH vm_clock*/QEMU_CLOCK_VIRTUAL, check_procexit, 0);
+	/*AWH qemu_mod_timer*/timer_mod_ns(recon_timer,
+				   qemu_clock_get_ns(/*AWH vm_clock*/QEMU_CLOCK_VIRTUAL) + get_ticks_per_sec() * 20);
 
 }
 

@@ -20,7 +20,7 @@ http://code.google.com/p/decaf-platform/
 #include <sys/queue.h>
 #include "hw/hw.h"
 #include "qemu-common.h"
-#include "sysemu.h"
+#include "sysemu/sysemu.h"
 #include "hw/hw.h" /* {de,}register_savevm */
 #include "cpu.h"
 #include "DECAF_main.h"

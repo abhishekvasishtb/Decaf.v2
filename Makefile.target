@@ -94,7 +94,7 @@ obj-y += target-$(TARGET_BASE_ARCH)/
 obj-y += disas.o
 # AWH - Originally in Makefile.objs
 libdecaf-y=DECAF_callback.o DECAF_main.o DECAF_cmds.o
-#libdecaf-y+=hookapi.o procmod.o
+libdecaf-y+=hookapi.o procmod.o
 libdecaf-y+=read_linux.o windows_vmi.o vmi.o vmi_c_wrapper.o
 libdecaf-y+=linux_procinfo.o linux_readelf.o linux_vmi.o
 libdecaf-y+=function_map.o

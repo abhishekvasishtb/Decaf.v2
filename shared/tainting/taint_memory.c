@@ -3,7 +3,7 @@
 #include <string.h> // For memset()
 #include "tcg.h"
 #include "taint_memory.h"
-#include "monitor.h" // For default_mon
+#include "monitor/monitor.h" // For default_mon
 #include "DECAF_callback_common.h"
 #include "shared/DECAF_callback_to_QEMU.h"
 

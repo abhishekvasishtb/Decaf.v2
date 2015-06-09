@@ -15,16 +15,21 @@ http://code.google.com/p/decaf-platform/
 */
 #include <assert.h>
 #include <sys/queue.h>
+#if defined(__cplusplus)
+extern "C" {
+#endif /* __cplusplus */
 #include "sysemu/sysemu.h"
-// AWH FIXME #include "qemu-timer.h"
+#include "qemu/timer.h"
 #include "hw/hw.h"
 // AWH #include "hw/isa/isa.h"		/* for register_ioport_write */
 #include "sysemu/blockdev.h" // AWH
 #include "shared/DECAF_main.h" // AWH
 #include "shared/DECAF_callback.h"
+#if defined (__cplusplus)
+}
+#endif /* __cplusplus */
 #include "shared/hookapi.h" // AWH
 #include "DECAF_target.h"
-extern void * cpu_single_env; // AWH
 
 // Deprecated
 int DECAF_emulation_started = 0;
@@ -118,7 +123,7 @@ gpa_t DECAF_get_phys_addr_with_pgd(CPUState* _env, gpa_t pgd, gva_t addr)
 #ifdef DECAF_NO_FAIL_SAFE
     return (INV_ADDR);
 #else
-    _env = cpu_single_env ? cpu_single_env : first_cpu;
+    _env = first_cpu; /*AWH cpu_single_env ? cpu_single_env : first_cpu;*/
 #endif
   }
   X86CPU *cpu = X86_CPU(_env); /* AWH */
@@ -164,7 +169,7 @@ int DECAF_get_page_access(CPUState* _env, uint32_t addr)
   #ifdef DECAF_NO_FAIL_SAFE
       return (INV_ADDR);
   #else
-      _env = cpu_single_env ? cpu_single_env : first_cpu;
+      _env = first_cpu; /* AWH cpu_single_env ? cpu_single_env : first_cpu;*/
   #endif
     }
 

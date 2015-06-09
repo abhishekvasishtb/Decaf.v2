@@ -90,7 +90,7 @@ static const char * dll_modules_list[] = {
 
 static bool should_extract_symbol(const char *module_name)
 {
-	for (int i=0; i<sizeof(dll_modules_list)/sizeof(const char *); i++) {
+	for (unsigned int i=0; i<sizeof(dll_modules_list)/sizeof(const char *); i++) {
 		if (!strcasecmp(module_name, dll_modules_list[i]))
 			return true;
 
@@ -239,6 +239,7 @@ static char * get_basename(char *fullname)
 static void update_kernel_modules(CPUState *env, target_ulong vaddr) {
 	uint32_t kdvb, psLM, curr_mod, next_mod;
 	uint32_t holder;
+	CPUX86State *_env = &(X86_CPU(env)->env);
 	module *curr_entry = NULL;
 
 	if (gkpcr == 0)
@@ -274,7 +275,7 @@ static void update_kernel_modules(CPUState *env, target_ulong vaddr) {
 		//uniquely identify a module.
 		//We do not use full module name, because the same module can be referenced through
 		//different full paths: e.g., c://windows/system32 and /systemroot/windows/system32.
-		if(get_IMAGE_NT_HEADERS(env->cr[3], base, &nth, env) < 0)
+		if(get_IMAGE_NT_HEADERS(_env->cr[3], base, &nth, env) < 0)
 			goto next;
 
 		snprintf(key, sizeof(key)-1, "%s:%08x", base_name, nth.OptionalHeader.CheckSum);
@@ -370,14 +371,14 @@ next:
 static void extract_export_table(IMAGE_NT_HEADERS *nth, uint32_t cr3, uint32_t base, module *mod, CPUState *_env)
 {
 	IMAGE_EXPORT_DIRECTORY ied;
-	DWORD edt_va, edt_size;
+	DWORD edt_va; // AWH , edt_size;
 	DWORD *func_addrs=NULL, *name_addrs=NULL;
 	WORD *ordinals=NULL;
 	char name[64];
 	DWORD i;
-	//CPUState *env = cpu_single_env;
+
 	edt_va = nth->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].VirtualAddress;
-	edt_size = nth->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].Size;
+	// AWH edt_size = nth->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].Size;
 
 	if(DECAF_read_mem(_env, base + edt_va, sizeof(ied), &ied) < 0) {
 		//monitor_printf(default_mon, "Unable to read exp dir from image: mod=%s:%d base=%08x, va=%08x.\n", mod->name, ver, base, edt_va);
@@ -476,11 +477,12 @@ static void retrieve_missing_symbols(process *proc, CPUState *_env)
 
 static inline void get_new_modules(CPUState* _env, process * proc, target_ulong vaddr)
 {
+	CPUX86State *env = &(X86_CPU(_env)->env);
 	uint32_t base = 0, self = 0, pid = 0;
 	if (proc == kernel_proc) {
 		update_kernel_modules(_env, vaddr);
 	} else {
-		base = _env->segs[R_FS].base;
+		base = env->segs[R_FS].base;
 		DECAF_read_mem(_env, base + 0x18, 4, &self);
 
 		if (base != 0 && base == self) {
@@ -497,24 +499,25 @@ static inline void get_new_modules(CPUState* _env, process * proc, target_ulong 
 
 static void tlb_call_back(DECAF_Callback_Params *temp)
 {
-	CPUState *ourenv = temp->tx.env;
+	CPUState *_env = temp->tx.env;
+	CPUX86State *ourenv = &(X86_CPU(temp->tx.env)->env);
 	target_ulong vaddr = temp->tx.vaddr;
 	uint32_t cr3 = ourenv->cr[3];
 	process *proc;
 
-	if(DECAF_is_in_kernel(ourenv)) {
+	if(DECAF_is_in_kernel(_env)) {
 		proc = kernel_proc;
 		kernel_proc->cr3 = cr3;
 	} else {
 		proc = VMI_find_process_by_pgd(cr3);
 		if (proc == NULL)
-			proc = find_new_process(ourenv, cr3);
+			proc = find_new_process(_env, cr3);
 	}
 
 	if (proc ) {
 		
 		if (!is_page_resolved(proc, vaddr)) {
-			get_new_modules(ourenv, proc, vaddr);
+			get_new_modules(_env, proc, vaddr);
 
 			if (!is_page_resolved(proc, vaddr)) {
 				int attempts = unresolved_attempt(proc, vaddr);
@@ -523,7 +526,7 @@ static void tlb_call_back(DECAF_Callback_Params *temp)
 			}
 
 		}
-		retrieve_missing_symbols(proc, ourenv);
+		retrieve_missing_symbols(proc, _env);
 	
 	}
 }
@@ -532,16 +535,18 @@ static uint32_t get_kpcr(void)
 {
 	uint32_t kpcr = 0, selfpcr = 0;
 	CPUState *env;
+	CPUX86State *ourenv;
 
-	for (env = first_cpu; env != NULL; env = env->next_cpu) {
+	for (env = first_cpu; env != NULL; 
+		env = /* AWH env->next_cpu*/CPU_NEXT(env)) {
 		if (env->cpu_index == 0) {
 			break;
 		}
 	}
+	ourenv = &(X86_CPU(env)->env); /* AWH */
+	DECAF_read_mem(env, ourenv->segs[R_FS].base + 0x1c, 4, &selfpcr);
 
-	DECAF_read_mem(env, env->segs[R_FS].base + 0x1c, 4, &selfpcr);
-
-	if (selfpcr == env->segs[R_FS].base) {
+	if (selfpcr == ourenv->segs[R_FS].base) {
 		kpcr = selfpcr;
 	}
 
@@ -593,13 +598,14 @@ static uint32_t get_ntoskrnl_internal(uint32_t curr_page, CPUState *env) {
 	return 0;
 }
 
-uint32_t get_ntoskrnl(CPUState *_env) {
+uint32_t get_ntoskrnl(CPUState *env) {
 	uint32_t ntoskrnl_base = 0;
-	ntoskrnl_base = get_ntoskrnl_internal(_env->sysenter_eip & 0xfffff000, _env);
+	CPUX86State *_env = &(X86_CPU(env)->env);
+	ntoskrnl_base = get_ntoskrnl_internal(_env->sysenter_eip & 0xfffff000, env);
 	if (ntoskrnl_base)
 		goto found;
 
-	ntoskrnl_base = get_ntoskrnl_internal(_env->eip & 0xfffff000, _env);
+	ntoskrnl_base = get_ntoskrnl_internal(_env->eip & 0xfffff000, env);
 	if (ntoskrnl_base)
 		goto found;
 	return 0;
@@ -612,8 +618,8 @@ found:
 static uint32_t probe_windows(CPUState *_env)
 {
 	uint32_t base;
-
-	if (_env->eip > 0x80000000 && _env->segs[R_FS].base > 0x80000000) {
+	CPUX86State *env = &(X86_CPU(env)->env);
+	if (env->eip > 0x80000000 && env->segs[R_FS].base > 0x80000000) {
 		gkpcr = get_kpcr();
 		if (gkpcr != 0) {
 			//DECAF_unregister_callback(DECAF_INSN_END_CB, insn_handle);
@@ -674,8 +680,9 @@ void check_procexit(void *)
 {
 	/* AWH - cpu_single_env is invalid outside of the main exec thread */
 	CPUState *env = /* AWH cpu_single_env ? cpu_single_env :*/ first_cpu;
-	qemu_mod_timer(recon_timer,
-			qemu_get_clock_ns(vm_clock) + get_ticks_per_sec() * 10);
+	/*AWH qemu_mod_timer*/timer_mod_ns(recon_timer,
+		qemu_clock_get_ns(/* AWH vm_clock*/QEMU_CLOCK_VIRTUAL) + 
+		get_ticks_per_sec() * 10);
 	//monitor_printf(default_mon, "Checking for proc exits...\n");
 
 	uint32_t end_time[2];
@@ -710,9 +717,9 @@ void win_vmi_init()
 	kernel_proc->pid = 0;
 	VMI_create_process(kernel_proc);
 
-	recon_timer = qemu_new_timer_ns(vm_clock, check_procexit, 0);
-	qemu_mod_timer(recon_timer,
-			qemu_get_clock_ns(vm_clock) + get_ticks_per_sec() * 30);
+	recon_timer = /*AWH qemu_new_timer_ns*/timer_new_ns(/*AWH vm_clock*/QEMU_CLOCK_VIRTUAL, check_procexit, 0);
+	/*AWH qemu_mod_timer*/timer_mod_ns(recon_timer,
+			qemu_clock_get_ns(/*AWH vm_clock*/QEMU_CLOCK_VIRTUAL) + get_ticks_per_sec() * 30);
 
 }
 

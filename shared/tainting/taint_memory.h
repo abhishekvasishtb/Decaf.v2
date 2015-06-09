@@ -1,11 +1,12 @@
 #ifndef __DECAF_TAINT_MEMORY_H__
 #define __DECAF_TAINT_MEMORY_H__
 
-#include "qdict.h" // AWH
-#include "DECAF_types.h"
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
+
+#include "qapi/qmp/qdict.h"
+#include "DECAF_types.h"
 
 /* These were originally in TEMU_main.h */
 extern int do_enable_tainting(Monitor *mon, const QDict *qdict, QObject **ret_data);
