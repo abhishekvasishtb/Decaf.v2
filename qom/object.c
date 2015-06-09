@@ -10,6 +10,8 @@
  * See the COPYING file in the top-level directory.
  */
 
+/* AWH - Changed the variables to be C++ friendly in the headers
+  (class, typename, Type) */
 #include "qom/object.h"
 #include "qemu-common.h"
 #include "qapi/visitor.h"
@@ -66,7 +68,7 @@ struct TypeImpl
     InterfaceImpl interfaces[MAX_INTERFACES];
 };
 
-static Type type_interface;
+static _Type type_interface;
 
 static GHashTable *type_table_get(void)
 {
@@ -337,7 +339,7 @@ void object_initialize_with_type(void *data, size_t size, TypeImpl *type)
     g_assert(size >= type->instance_size);
 
     memset(obj, 0, type->instance_size);
-    obj->class = type->class;
+    obj->_class = type->class; /* AWH - underscore */
     object_ref(obj);
     QTAILQ_INIT(&obj->properties);
     object_init_with_type(obj, type);
@@ -407,7 +409,7 @@ static void object_deinit(Object *obj, TypeImpl *type)
 static void object_finalize(void *data)
 {
     Object *obj = data;
-    TypeImpl *ti = obj->class->type;
+    TypeImpl *ti = obj->_class->type; /* AWH - Underscore */
 
     object_property_del_all(obj);
     object_deinit(obj, ti);
@@ -418,7 +420,7 @@ static void object_finalize(void *data)
     }
 }
 
-Object *object_new_with_type(Type type)
+Object *object_new_with_type(_Type type)
 {
     Object *obj;
 
@@ -451,7 +453,7 @@ Object *object_dynamic_cast(Object *obj, const char *typename)
 Object *object_dynamic_cast_assert(Object *obj, const char *typename,
                                    const char *file, int line, const char *func)
 {
-    trace_object_dynamic_cast_assert(obj ? obj->class->type->name : "(null)",
+    trace_object_dynamic_cast_assert(obj ? obj->_class->type->name : "(null)",
                                      typename, file, line, func);
 
 #ifdef CONFIG_QOM_CAST_DEBUG
@@ -459,7 +461,7 @@ Object *object_dynamic_cast_assert(Object *obj, const char *typename,
     Object *inst;
 
     for (i = 0; obj && i < OBJECT_CLASS_CAST_CACHE; i++) {
-        if (obj->class->object_cast_cache[i] == typename) {
+        if (obj->_class->object_cast_cache[i] == typename) {
             goto out;
         }
     }
@@ -476,10 +478,10 @@ Object *object_dynamic_cast_assert(Object *obj, const char *typename,
 
     if (obj && obj == inst) {
         for (i = 1; i < OBJECT_CLASS_CAST_CACHE; i++) {
-            obj->class->object_cast_cache[i - 1] =
-                    obj->class->object_cast_cache[i];
+            obj->_class->object_cast_cache[i - 1] =
+                    obj->_class->object_cast_cache[i];
         }
-        obj->class->object_cast_cache[i - 1] = typename;
+        obj->_class->object_cast_cache[i - 1] = typename;
     }
 
 out:
@@ -581,12 +583,12 @@ out:
 
 const char *object_get_typename(Object *obj)
 {
-    return obj->class->type->name;
+    return obj->_class->type->name;
 }
 
 ObjectClass *object_get_class(Object *obj)
 {
-    return obj->class;
+    return obj->_class;
 }
 
 bool object_class_is_abstract(ObjectClass *klass)
@@ -1075,8 +1077,8 @@ static void object_finalize_child_property(Object *obj, const char *name,
 {
     Object *child = opaque;
 
-    if (child->class->unparent) {
-        (child->class->unparent)(child);
+    if (child->_class->unparent) {
+        (child->_class->unparent)(child);
     }
     child->parent = NULL;
     object_unref(child);

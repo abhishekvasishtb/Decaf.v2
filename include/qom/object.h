@@ -11,6 +11,8 @@
  *
  */
 
+/* AWH - Added underscores to start of variables that clash with C++ stuff
+  (class, typename, etc.) */
 #ifndef QEMU_OBJECT_H
 #define QEMU_OBJECT_H
 
@@ -23,7 +25,7 @@
 struct Visitor;
 
 struct TypeImpl;
-typedef struct TypeImpl *Type;
+typedef struct TypeImpl *_Type; /* AWH - Added underscore for C++ */
 
 typedef struct ObjectClass ObjectClass;
 typedef struct Object Object;
@@ -376,7 +378,7 @@ typedef void (ObjectFree)(void *obj);
 struct ObjectClass
 {
     /*< private >*/
-    Type type;
+    _Type type;
     GSList *interfaces;
 
     const char *object_cast_cache[OBJECT_CLASS_CAST_CACHE];
@@ -403,7 +405,7 @@ struct ObjectClass
 struct Object
 {
     /*< private >*/
-    ObjectClass *class;
+    ObjectClass *_class;
     ObjectFree *free;
     QTAILQ_HEAD(, ObjectProperty) properties;
     uint32_t ref;
@@ -557,7 +559,7 @@ struct InterfaceClass
     ObjectClass parent_class;
     /*< private >*/
     ObjectClass *concrete_class;
-    Type interface_type;
+    _Type interface_type;
 };
 
 #define TYPE_INTERFACE "interface"
@@ -592,7 +594,7 @@ struct InterfaceClass
  *
  * Returns: The newly allocated and instantiated object.
  */
-Object *object_new(const char *typename);
+Object *object_new(const char *_typename);
 
 /**
  * object_new_with_type:
@@ -604,7 +606,7 @@ Object *object_new(const char *typename);
  *
  * Returns: The newly allocated and instantiated object.
  */
-Object *object_new_with_type(Type type);
+Object *object_new_with_type(_Type type);
 
 /**
  * object_initialize_with_type:
@@ -616,7 +618,7 @@ Object *object_new_with_type(Type type);
  * have already been allocated.  The returned object has a reference count of 1,
  * and will be finalized when the last reference is dropped.
  */
-void object_initialize_with_type(void *data, size_t size, Type type);
+void object_initialize_with_type(void *data, size_t size, _Type type);
 
 /**
  * object_initialize:
@@ -628,7 +630,7 @@ void object_initialize_with_type(void *data, size_t size, Type type);
  * have already been allocated.  The returned object has a reference count of 1,
  * and will be finalized when the last reference is dropped.
  */
-void object_initialize(void *obj, size_t size, const char *typename);
+void object_initialize(void *obj, size_t size, const char *_typename);
 
 /**
  * object_dynamic_cast:
@@ -640,7 +642,7 @@ void object_initialize(void *obj, size_t size, const char *typename);
  *
  * Returns: This function returns @obj on success or #NULL on failure.
  */
-Object *object_dynamic_cast(Object *obj, const char *typename);
+Object *object_dynamic_cast(Object *obj, const char *_typename);
 
 /**
  * object_dynamic_cast_assert:
@@ -651,7 +653,7 @@ Object *object_dynamic_cast(Object *obj, const char *typename);
  * This function is not meant to be called directly, but only through
  * the wrapper macro OBJECT_CHECK.
  */
-Object *object_dynamic_cast_assert(Object *obj, const char *typename,
+Object *object_dynamic_cast_assert(Object *obj, const char *_typename,
                                    const char *file, int line, const char *func);
 
 /**
@@ -679,7 +681,7 @@ const char *object_get_typename(Object *obj);
  *
  * Returns: 0 on failure, the new #Type on success.
  */
-Type type_register_static(const TypeInfo *info);
+_Type type_register_static(const TypeInfo *info);
 
 /**
  * type_register:
@@ -690,7 +692,7 @@ Type type_register_static(const TypeInfo *info);
  *
  * Returns: 0 on failure, the new #Type on success.
  */
-Type type_register(const TypeInfo *info);
+_Type type_register(const TypeInfo *info);
 
 /**
  * object_class_dynamic_cast_assert:
@@ -704,7 +706,7 @@ Type type_register(const TypeInfo *info);
  * the wrapper macros OBJECT_CLASS_CHECK and INTERFACE_CHECK.
  */
 ObjectClass *object_class_dynamic_cast_assert(ObjectClass *klass,
-                                              const char *typename,
+                                              const char *_typename,
                                               const char *file, int line,
                                               const char *func);
 
@@ -723,7 +725,7 @@ ObjectClass *object_class_dynamic_cast_assert(ObjectClass *klass,
  * it.  (FIXME: perhaps this can be detected at type definition time?)
  */
 ObjectClass *object_class_dynamic_cast(ObjectClass *klass,
-                                       const char *typename);
+                                       const char *_typename);
 
 /**
  * object_class_get_parent:
@@ -755,7 +757,7 @@ bool object_class_is_abstract(ObjectClass *klass);
  *
  * Returns: The class for @typename or %NULL if not found.
  */
-ObjectClass *object_class_by_name(const char *typename);
+ObjectClass *object_class_by_name(const char *_typename);
 
 void object_class_foreach(void (*fn)(ObjectClass *klass, void *opaque),
                           const char *implements_type, bool include_abstract,
@@ -1085,7 +1087,7 @@ Object *object_resolve_path(const char *path, bool *ambiguous);
  *
  * Returns: The matched object or NULL on path lookup failure.
  */
-Object *object_resolve_path_type(const char *path, const char *typename,
+Object *object_resolve_path_type(const char *path, const char *_typename,
                                  bool *ambiguous);
 
 /**

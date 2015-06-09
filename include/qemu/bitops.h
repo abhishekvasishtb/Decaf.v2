@@ -18,7 +18,8 @@
 #include "host-utils.h"
 
 #define BITS_PER_BYTE           CHAR_BIT
-#define BITS_PER_LONG           (sizeof (unsigned long) * BITS_PER_BYTE)
+/* AWH - Resolve C++ warning with explicit cast */
+#define BITS_PER_LONG           ((signed long)(sizeof (unsigned long) * BITS_PER_BYTE))
 
 #define BIT(nr)			(1UL << (nr))
 #define BIT_MASK(nr)		(1UL << ((nr) % BITS_PER_LONG))

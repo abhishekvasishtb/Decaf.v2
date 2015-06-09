@@ -20,6 +20,9 @@
 #ifndef QEMU_CPU_H
 #define QEMU_CPU_H
 
+/* AWH - Added underscores to start of variables that clash with C++ stuff
+  (class, typename, etc.) */
+
 #include <signal.h>
 #include <setjmp.h>
 #include "hw/qdev-core.h"
@@ -59,7 +62,7 @@ typedef uint64_t vaddr;
  */
 #define CPU(obj) ((CPUState *)(obj))
 
-#define CPU_CLASS(class) OBJECT_CLASS_CHECK(CPUClass, (class), TYPE_CPU)
+#define CPU_CLASS(_class) OBJECT_CLASS_CHECK(CPUClass, (_class), TYPE_CPU)
 #define CPU_GET_CLASS(obj) OBJECT_GET_CLASS(CPUClass, (obj), TYPE_CPU)
 
 typedef struct CPUState CPUState;
@@ -192,7 +195,7 @@ typedef struct CPUBreakpoint {
 } CPUBreakpoint;
 
 typedef struct CPUWatchpoint {
-    vaddr vaddr;
+    vaddr _vaddr; /* AWH - Added the underscore */
     vaddr len;
     vaddr hitaddr;
     int flags; /* BP_* */
@@ -453,7 +456,7 @@ void cpu_reset(CPUState *cpu);
  *
  * Returns: A #CPUClass or %NULL if not matching class is found.
  */
-ObjectClass *cpu_class_by_name(const char *typename, const char *cpu_model);
+ObjectClass *cpu_class_by_name(const char *_typename, const char *cpu_model);
 
 /**
  * cpu_generic_init:
@@ -464,7 +467,7 @@ ObjectClass *cpu_class_by_name(const char *typename, const char *cpu_model);
  *
  * Returns: A #CPUState or %NULL if an error occurred.
  */
-CPUState *cpu_generic_init(const char *typename, const char *cpu_model);
+CPUState *cpu_generic_init(const char *_typename, const char *cpu_model);
 
 /**
  * cpu_has_work:

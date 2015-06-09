@@ -15,7 +15,7 @@
 #include <tr1/unordered_map>
 #include <tr1/unordered_set>
 #include "vmi_callback.h"
-#include "monitor.h"
+#include "monitor/monitor.h"
 
 //#ifdef CONFIG_VMI_ENABLE
 using namespace std;

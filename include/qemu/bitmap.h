@@ -95,7 +95,8 @@ int slow_bitmap_intersects(const unsigned long *bitmap1,
 static inline unsigned long *bitmap_try_new(long nbits)
 {
     long len = BITS_TO_LONGS(nbits) * sizeof(unsigned long);
-    return g_try_malloc0(len);
+/* AWH - Resolve C++ warning with explicit cast */
+    return (unsigned long *)g_try_malloc0(len);
 }
 
 static inline unsigned long *bitmap_new(long nbits)
@@ -236,10 +237,11 @@ unsigned long bitmap_find_next_zero_area(unsigned long *map,
 static inline unsigned long *bitmap_zero_extend(unsigned long *old,
                                                 long old_nbits, long new_nbits)
 {
+    /* AWH - Renamed "new" var and casted to make it c++ friendly */
     long new_len = BITS_TO_LONGS(new_nbits) * sizeof(unsigned long);
-    unsigned long *new = g_realloc(old, new_len);
-    bitmap_clear(new, old_nbits, new_nbits - old_nbits);
-    return new;
+    unsigned long *_new = (unsigned long *)g_realloc(old, new_len);
+    bitmap_clear(_new, old_nbits, new_nbits - old_nbits);
+    return _new;
 }
 
 #endif /* BITMAP_H */

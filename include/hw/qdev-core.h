@@ -307,10 +307,10 @@ DeviceState *qdev_find_recursive(BusState *bus, const char *id);
 /* Returns 0 to walk children, > 0 to skip walk, < 0 to terminate walk. */
 typedef int (qbus_walkerfn)(BusState *bus, void *opaque);
 typedef int (qdev_walkerfn)(DeviceState *dev, void *opaque);
-
-void qbus_create_inplace(void *bus, size_t size, const char *typename,
+/* AWH - Renamed vars with underscore for C++ */
+void qbus_create_inplace(void *bus, size_t size, const char *_typename,
                          DeviceState *parent, const char *name);
-BusState *qbus_create(const char *typename, DeviceState *parent, const char *name);
+BusState *qbus_create(const char *_typename, DeviceState *parent, const char *name);
 /* Returns > 0 if either devfn or busfn skip walk somewhere in cursion,
  *         < 0 if either devfn or busfn terminate walk somewhere in cursion,
  *           0 otherwise. */

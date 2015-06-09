@@ -41,17 +41,12 @@
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
-#include "cpu.h"
-#include "config.h"
-#include "hw/hw.h" // AWH
-#include "qemu-timer.h"
+#include "qemu/timer.h"
 #include "DECAF_main.h"
 #include "DECAF_target.h"
-//#include "sysemu.h"
 
 #ifdef __cplusplus
 }
-;
 #endif /* __cplusplus */
 
 #include "windows_vmi.h"

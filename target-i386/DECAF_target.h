@@ -27,23 +27,18 @@ http://code.google.com/p/decaf-platform/
 
 #undef INLINE
 
+#if defined(__cplusplus) /* AWH */
+extern "C" {
+#endif /* __cplusplus */
 #include "config.h"
 #include <assert.h>
 
 #include "qemu-common.h"
 #include "cpu.h"
-//#include "taintcheck.h"
-// AWH #include "targphys.h"
-// AWH #include "compiler.h"
 #include "monitor/monitor.h"
-// AWH #include "shared/disasm.h"
 #include "shared/DECAF_callback.h"
 
 #define MAX_REGS (CPU_NUM_REGS + 8) //we assume up to 8 temporary registers
-
-#ifdef __cplusplus // AWH
-extern "C" {
-#endif // __cplusplus
 
 //extern void DECAF_update_cpustate(void);
 

@@ -520,7 +520,8 @@ static inline QEMUTimer *timer_new_tl(QEMUTimerList *timer_list,
                                       QEMUTimerCB *cb,
                                       void *opaque)
 {
-    QEMUTimer *ts = g_malloc0(sizeof(QEMUTimer));
+    /* AWH - Added cast for C++ */
+    QEMUTimer *ts = (QEMUTimer *)g_malloc0(sizeof(QEMUTimer));
     timer_init_tl(ts, timer_list, scale, cb, opaque);
     return ts;
 }

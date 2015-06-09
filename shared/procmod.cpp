@@ -13,11 +13,14 @@ http://sycurelab.ecs.syr.edu/
 If you have any questions about DECAF,please post it on
 http://code.google.com/p/decaf-platform/
 */
+extern "C" {
+#include "config.h" /* AWH */
 #include "qemu-common.h"
+}
 #include "hw/hw.h"
 #include "DECAF_main.h"
 #include "DECAF_target.h"
-#include "hookapi.h"
+// AWH #include "hookapi.h"
 #include "read_linux.h"
 #include "shared/function_map.h"
 #include "vmi_callback.h"
@@ -223,13 +226,13 @@ int procmod_update_name(uint32_t pid, char *name)
 	return 0;
 }
 
-
+#if 0 /* AWH - Unused */
 static int procmod_remove_all()
 {
     VMI_remove_all();
     return 0;
 }
-
+#endif /* AWH */
 
 // void update_proc(void *opaque)
 // {
@@ -409,9 +412,8 @@ int is_guest_windows()
     // the current process context, while Linux does not. We may need better heuristics 
     // when we need to support more guest systems.
     return (cpu_single_env->segs[R_FS].selector != 0);
-#else
-    return 0;
 #endif
+    return 0;
 }
 
 

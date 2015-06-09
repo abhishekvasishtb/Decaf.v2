@@ -31,7 +31,7 @@
 #include "shared/DECAF_callback_to_QEMU.h"
 #include "shared/hookapi.h"
 #include "DECAF_target.h"
-#include "procmod.h"
+// AWH #include "procmod.h" 
 #ifdef CONFIG_TCG_TAINT
 #include "tainting/taint_memory.h"
 #include "tainting/taintcheck_opt.h"

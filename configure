@@ -746,8 +746,9 @@ EOF
   confsuffix=""
   libs_qga="-lws2_32 -lwinmm -lpowrprof $libs_qga"
 fi
-
-werror=""
+#AWH - werror is shut off because it conflicts with DECAF c++ code
+werror="no"
+#werror=""
 
 for opt do
   optarg=`expr "x$opt" : 'x[^=]*=\(.*\)'`

@@ -26,16 +26,14 @@ http://code.google.com/p/decaf-platform/
 #ifndef DECAF_MAIN_H_
 #define DECAF_MAIN_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "qemu-common.h"
-//#include "monitor.h"
 #include "monitor/monitor.h"
 #include "DECAF_types.h"
 #include "sysemu/blockdev.h"
-
-#ifdef __cplusplus
-extern "C"
-{
-#endif
 
 /*************************************************************************
  * The Plugin interface comes first
