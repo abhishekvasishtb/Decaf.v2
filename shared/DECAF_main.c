@@ -31,7 +31,7 @@
 #include "shared/DECAF_callback_to_QEMU.h"
 #include "shared/hookapi.h"
 #include "DECAF_target.h"
-// AWH #include "procmod.h" 
+#include "procmod.h" 
 #ifdef CONFIG_TCG_TAINT
 #include "tainting/taint_memory.h"
 #include "tainting/taintcheck_opt.h"
@@ -547,7 +547,7 @@ void DECAF_init(void) {
 /*
  * NIC related functions
  */
-#if 0 /* AWH - FIXME */
+#if 0 /* AWH - Reinclude this callback when the virtdev is fixed */
 static void DECAF_virtdev_write_data(void *opaque, uint32_t addr, uint32_t val) {
 
 
@@ -569,8 +569,12 @@ static void DECAF_virtdev_write_data(void *opaque, uint32_t addr, uint32_t val) 
 	}
 
 }
+#endif /* AWH */
 
 void DECAF_virtdev_init(void) {
+#if 1 /* AWH - FIXME */
+	fprintf(stderr, "STUB: DECAF_virtdev_init()\n");
+#else
 	int res = register_ioport_write(0x68, 1, 1, DECAF_virtdev_write_data,
 			NULL );
 	if (res) {
@@ -581,8 +585,8 @@ void DECAF_virtdev_init(void) {
 		fprintf(stderr, "failure on opening guest.log \n");
 		exit(-1);
 	}
-}
 #endif /* AWH */
+}
 
 void DECAF_after_loadvm(const char *param) {
 	if (decaf_plugin && decaf_plugin->after_loadvm)

@@ -37,7 +37,7 @@ extern "C" {
 #include "cpu.h"
 #include "monitor/monitor.h"
 #include "shared/DECAF_callback.h"
-
+#include "cpu-qom.h" // AWH 
 #define MAX_REGS (CPU_NUM_REGS + 8) //we assume up to 8 temporary registers
 
 //extern void DECAF_update_cpustate(void);

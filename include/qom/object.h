@@ -19,6 +19,11 @@
 #include <glib.h>
 #include <stdint.h>
 #include <stdbool.h>
+
+#if defined(__cplusplus) /* AWH */
+extern "C" {
+#endif /* __cplusplus */
+
 #include "qemu/queue.h"
 #include "qapi/error.h"
 
@@ -1330,5 +1335,8 @@ int object_child_foreach(Object *obj, int (*fn)(Object *child, void *opaque),
  */
 Object *container_get(Object *root, const char *path);
 
+#if defined(__cplusplus)
+}
+#endif /* __cplusplus */
 
 #endif

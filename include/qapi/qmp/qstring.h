@@ -16,7 +16,7 @@
 #include <stdint.h>
 #include "qapi/qmp/qobject.h"
 
-typedef struct QString {
+typedef struct _QString { /* AWH - Added underscore */
     QObject_HEAD;
     char *string;
     size_t length;

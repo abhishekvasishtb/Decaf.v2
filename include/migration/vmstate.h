@@ -31,6 +31,10 @@
 #endif
 #include <qjson.h>
 
+#if defined(__cplusplus) /* AWH */
+extern "C" {
+#endif /* __cplusplus */
+
 typedef void SaveStateHandler(QEMUFile *f, void *opaque);
 typedef int LoadStateHandler(QEMUFile *f, void *opaque, int version_id);
 
@@ -847,5 +851,9 @@ int64_t self_announce_delay(int round)
 }
 
 void dump_vmstate_json_to_file(FILE *out_fp);
+
+#if defined(__cplusplus) /* AWH */
+}
+#endif /* __cplusplus */
 
 #endif

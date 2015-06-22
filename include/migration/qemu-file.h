@@ -27,6 +27,10 @@
 
 #include <stdint.h>
 
+#if defined(__cplusplus) /* AWH */
+extern "C" {
+#endif /* __cplusplus */
+
 /* This function writes a chunk of data to a file at the given position.
  * The pos argument can be ignored if the file is only being used for
  * streaming.  The handler should try to write all of the data it can.
@@ -309,4 +313,9 @@ static inline void qemu_get_sbe64s(QEMUFile *f, int64_t *pv)
 {
     qemu_get_be64s(f, (uint64_t *)pv);
 }
+
+#if defined(__cplusplus) /* AWH */
+}
+#endif /* __cplusplus */
+
 #endif

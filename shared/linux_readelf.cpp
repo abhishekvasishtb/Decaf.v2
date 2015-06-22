@@ -115,7 +115,7 @@ typedef Elf32_External_Dyn Elf_External_Dyn;
 typedef struct _ELFInfo {
 	const uint32_t cr3;
 	const char * mod_name;
-	const target_ulong start_addr;	// elf memory start address
+	const target_ulong start_addr;  // elf memory start address
 	const uint64_t size;	// elf memory region size
 
 	Elf_Internal_Ehdr elf_header;

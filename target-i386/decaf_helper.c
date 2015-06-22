@@ -1,18 +1,18 @@
 #include <math.h>
 #include "cpu.h"
-#include "dyngen-exec.h"
-#include "host-utils.h"
-#include "ioport.h"
+// AWH #include "dyngen-exec.h"
+#include "qemu/host-utils.h"
+#include "exec/ioport.h"
 #include "qemu-common.h"
-#include "qemu-log.h"
-#include "cpu-defs.h"
-#include "helper.h"
+#include "qemu/log.h"
+#include "exec/cpu-defs.h"
+// AWH #include "helper.h"
 
 #ifdef CONFIG_TCG_TAINT
-	#include "/shared/tainting/taintcheck_opt.h"
+	#include "shared/tainting/taintcheck_opt.h"
 #endif /* CONFIG_TCG_TAINT */
 
-#include "/shared/DECAF_main.h"
+#include "shared/DECAF_main.h"
 
 
 //Aravind - insn_callback_dispatch fn.
@@ -102,7 +102,14 @@ void helper_DECAF_taint_patch(void)
 
 void helper_DECAF_update_fpu(void)
 {
+#if 0 /* AWH */
 	cpu_single_env->fpip_t = cpu_single_env->eip;
 	cpu_single_env->fpcs_t = cpu_single_env->segs[R_CS].selector;
+#else
+  CPUX86State *env = &(X86_CPU(current_cpu)->env);
+  env->fpip_t = env->eip;
+  env->fpcs_t = env->segs[R_CS].selector;
+
+#endif /* AWH */
 }
 
